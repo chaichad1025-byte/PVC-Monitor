@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Production Monitor · โรง PVC</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --bg:        #080b10;
+  --surface:   #0f1520;
+  --surface2:  #161e2e;
+  --border:    #1e2a3d;
+  --teal:      #00e5c3;
+  --blue:      #4d9fff;
+  --amber:     #ffb830;
+  --green:     #30d97a;
+  --red:       #ff5757;
+  --text:      #dce8f5;
+  --muted:     #4a6080;
+  --mid:       #7a9abf;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Sarabun', sans-serif;
+  min-height: 100vh;
+}
+
+/* ── SCANLINE OVERLAY ── */
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background: repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,229,195,.012) 3px,rgba(0,229,195,.012) 4px);
+  pointer-events:none; z-index:9999;
+}
+
+/* ── HEADER ── */
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px; height: 58px;
+  position: sticky; top:0; z-index:200;
+}
+.h-left { display:flex; align-items:center; gap:14px; }
+.factory-icon {
+  width:38px; height:38px; border-radius:10px;
+  background: linear-gradient(135deg,#00e5c3 0%,#4d9fff 100%);
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; flex-shrink:0;
+}
+.h-title { font-size:15px; font-weight:700; letter-spacing:.02em; }
+.h-sub { font-size:11px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; }
+.h-right { display:flex; align-items:center; gap:16px; }
+.live-pill {
+  display:flex; align-items:center; gap:6px;
+  border:1px solid rgba(0,229,195,.35);
+  background:rgba(0,229,195,.08);
+  border-radius:20px; padding:4px 12px;
+  font-size:11px; font-family:'IBM Plex Mono',monospace; color:var(--teal); font-weight:600;
+}
+.live-dot { width:7px; height:7px; border-radius:50%; background:var(--teal); animation:blink 2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+#clock {
+  font-family:'IBM Plex Mono',monospace; font-size:14px;
+  color:var(--mid); letter-spacing:.06em;
+}
+
+/* ── MAIN ── */
+main { padding:24px 28px; max-width:1440px; margin:0 auto; }
+
+/* ── KPI ROW ── */
+.kpi-row {
+  display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:24px;
+}
+.kpi {
+  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  padding:18px 22px; position:relative; overflow:hidden;
+}
+.kpi::after {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+}
+.kpi.t::after{background:var(--teal);}
+.kpi.b::after{background:var(--blue);}
+.kpi.a::after{background:var(--amber);}
+.kpi.g::after{background:var(--green);}
+.kpi-icon { font-size:22px; margin-bottom:10px; }
+.kpi-lbl { font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); margin-bottom:6px; font-weight:600; }
+.kpi-val { font-family:'IBM Plex Mono',monospace; font-size:30px; font-weight:700; line-height:1; }
+.kpi.t .kpi-val{color:var(--teal);}
+.kpi.b .kpi-val{color:var(--blue);}
+.kpi.a .kpi-val{color:var(--amber);}
+.kpi.g .kpi-val{color:var(--green);}
+.kpi-unit { font-size:12px; color:var(--muted); margin-top:5px; }
+
+/* ── GRID LAYOUT ── */
+.grid-main {
+  display:grid; grid-template-columns:1fr 340px; gap:18px; margin-bottom:24px;
+}
+
+/* ── CARD ── */
+.card {
+  background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden;
+}
+.card-head {
+  padding:14px 22px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.card-title { font-size:14px; font-weight:700; display:flex; align-items:center; gap:8px; }
+.card-body { padding:22px; }
+
+/* ── STATUS BADGES ── */
+.badge {
+  display:inline-flex; align-items:center; gap:5px;
+  font-size:11px; font-weight:600; padding:3px 10px; border-radius:20px;
+}
+.badge-run  { background:rgba(0,229,195,.12); color:var(--teal);  border:1px solid rgba(0,229,195,.3);  }
+.badge-wait { background:rgba(255,184,48,.12); color:var(--amber); border:1px solid rgba(255,184,48,.3); }
+.badge-done { background:rgba(48,217,122,.12); color:var(--green); border:1px solid rgba(48,217,122,.3); }
+
+/* ── DETAIL GRID ── */
+.dg { display:grid; grid-template-columns:1fr 1fr; gap:14px 20px; }
+.dk { font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:3px; }
+.dv { font-size:14px; font-weight:600; }
+.dv.mono { font-family:'IBM Plex Mono',monospace; color:var(--teal); font-size:13px; }
+.dv.warn { color:var(--amber); }
+
+/* ── PROGRESS ── */
+.prog-wrap { margin-top:20px; }
+.prog-meta { display:flex; justify-content:space-between; font-size:12px; color:var(--muted); margin-bottom:7px; }
+.prog-bg { background:var(--surface2); border-radius:6px; height:9px; overflow:hidden; }
+.prog-fill {
+  height:100%; border-radius:6px;
+  background:linear-gradient(90deg,var(--teal),var(--blue));
+  transition:width .8s ease;
+}
+
+/* ── TIMER BOX ── */
+.timer-box {
+  margin-top:18px; background:var(--surface2); border:1px solid var(--border);
+  border-radius:10px; padding:14px 20px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.timer-lbl { font-size:12px; color:var(--muted); }
+.timer-val {
+  font-family:'IBM Plex Mono',monospace; font-size:26px; font-weight:600;
+  color:var(--teal); letter-spacing:.06em;
+}
+
+/* ── COUNTDOWN ── */
+.countdown-box {
+  margin-top:12px; background:var(--surface2); border:1px solid var(--border);
+  border-radius:10px; padding:14px 20px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.countdown-val {
+  font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:600;
+  color:var(--amber); letter-spacing:.06em;
+}
+
+/* ── FINISH CARD ── */
+.frow {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:9px 0; border-bottom:1px solid var(--border);
+}
+.frow:last-of-type { border-bottom:none; }
+.fk { font-size:12px; color:var(--muted); }
+.fv { font-size:13px; font-weight:600; text-align:right; }
+.fv.mono { font-family:'IBM Plex Mono',monospace; font-size:12px; }
+.fv.green { color:var(--green); }
+.fv.amber { color:var(--amber); }
+
+/* ── BREAKDOWN NOTE ── */
+.breakdown-note {
+  margin-top:14px;
+  background:rgba(255,87,87,.07); border:1px solid rgba(255,87,87,.2);
+  border-radius:8px; padding:10px 14px; font-size:12px; color:var(--red); line-height:1.6;
+}
+
+/* ── QUEUE TABLE ── */
+.queue-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+.q-head { padding:14px 22px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+.q-title { font-size:14px; font-weight:700; }
+.q-count { font-size:12px; color:var(--muted); font-family:'IBM Plex Mono',monospace; }
+table { width:100%; border-collapse:collapse; }
+thead th {
+  padding:10px 18px; font-size:10px; text-transform:uppercase; letter-spacing:.1em;
+  color:var(--muted); font-weight:700; text-align:left;
+  background:var(--surface2); border-bottom:1px solid var(--border);
+}
+tbody tr { border-bottom:1px solid var(--border); transition:background .15s; }
+tbody tr:last-child { border-bottom:none; }
+tbody tr:hover { background:rgba(255,255,255,.02); }
+tbody td { padding:12px 18px; font-size:13px; }
+.qn { font-family:'IBM Plex Mono',monospace; color:var(--blue); font-weight:700; font-size:14px; }
+.oid { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--mid); }
+.qty { font-family:'IBM Plex Mono',monospace; font-weight:600; }
+
+/* ── FOOTER ── */
+footer {
+  text-align:center; padding:18px; font-size:11px; color:var(--muted);
+  border-top:1px solid var(--border); margin-top:8px; letter-spacing:.04em;
+}
+
+@media(max-width:1000px) {
+  .kpi-row { grid-template-columns:repeat(2,1fr); }
+  .grid-main { grid-template-columns:1fr; }
+}
+@media(max-width:600px) {
+  main { padding:14px 14px; }
+  header { padding:0 14px; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="h-left">
+    <div class="factory-icon">🏭</div>
+    <div>
+      <div class="h-title">ระบบติดตามการผลิต โรง PVC</div>
+      <div class="h-sub">Production Monitor Dashboard</div>
+    </div>
+  </div>
+  <div class="h-right">
+    <div class="live-pill"><div class="live-dot"></div>LIVE</div>
+    <div id="clock">--:--:--</div>
+  </div>
+</header>
+
+<main>
+
+<!-- KPI ROW -->
+<div class="kpi-row">
+  <div class="kpi t">
+    <div class="kpi-icon">⚙️</div>
+    <div class="kpi-lbl">Running Orders</div>
+    <div class="kpi-val" id="kpiRunning">—</div>
+    <div class="kpi-unit">orders · status กำลังดำเนินงาน</div>
+  </div>
+  <div class="kpi a">
+    <div class="kpi-icon">🕐</div>
+    <div class="kpi-lbl">Waiting Orders</div>
+    <div class="kpi-val" id="kpiWaiting">—</div>
+    <div class="kpi-unit">orders · waiting queue</div>
+  </div>
+  <div class="kpi b">
+    <div class="kpi-icon">📦</div>
+    <div class="kpi-lbl">Total Length</div>
+    <div class="kpi-val" id="kpiTotalLength">—</div>
+    <div class="kpi-unit">length · all API orders</div>
+  </div>
+  <div class="kpi g">
+    <div class="kpi-icon">✅</div>
+    <div class="kpi-lbl">Latest Finished Length</div>
+    <div class="kpi-val" id="kpiLatestFinished">—</div>
+    <div class="kpi-unit">length · latest finished order</div>
+  </div>
+</div>
+
+<!-- MAIN GRID: Active + Finish -->
+<div class="grid-main">
+
+  <!-- ACTIVE ORDER -->
+  <div>
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">
+          ⚙️ Current Production
+          <span class="badge badge-run">● กำลังดำเนินงาน</span>
+        </div>
+        <span class="oid" id="activeTitle">—</span>
+      </div>
+      <div class="card-body">
+        <div class="dg">
+          <div><div class="dk">Queue</div><div class="dv mono" id="activeQueue">—</div></div>
+          <div><div class="dk">Order No</div><div class="dv mono" id="activeOrderNo"></div></div>
+          <div><div class="dk">Work No</div><div class="dv mono" id="activeWorkNo">—</div></div>
+          <div><div class="dk">Customer</div><div class="dv" id="activeCustomer">—</div></div>
+          <div><div class="dk">Worker</div><div class="dv" id="activeWorker">—</div></div>
+          <div><div class="dk">Sheet Type</div><div class="dv" id="activeSheetType"></div></div>
+          <div><div class="dk">Fabric</div><div class="dv" id="activeFabric">—</div></div>
+          <div><div class="dk">Color</div><div class="dv" id="activeColor"></div></div>
+          <div><div class="dk">Thickness</div><div class="dv" id="activeThickness"></div></div>
+          <div><div class="dk">Width</div><div class="dv" id="activeWidth"></div></div>
+          <div><div class="dk">GSM</div><div class="dv" id="activeGsm"></div></div>
+          <div><div class="dk">Length</div><div class="dv mono" id="activeLength">—</div></div>
+          <div><div class="dk">Speed</div><div class="dv mono" id="activeSpeed">—</div></div>
+          <div><div class="dk">Forecast</div><div class="dv mono" id="activeForecast">—</div></div>
+          <div><div class="dk">Start Date</div><div class="dv" style="font-size:13px" id="activeStartDate">—</div></div>
+          <div><div class="dk">Due Date</div><div class="dv warn" style="font-size:13px" id="activeDueDate">—</div></div>
+        </div>
+
+        <!-- PROGRESS BAR -->
+        <div class="prog-wrap">
+          <div class="prog-meta">
+            <span>Progress by start date and due date</span>
+            <span id="pct">— %</span>
+          </div>
+          <div class="prog-bg">
+            <div class="prog-fill" id="prog" style="width:0%"></div>
+          </div>
+        </div>
+
+        <!-- ELAPSED -->
+        <div class="timer-box">
+          <div>
+            <div class="timer-lbl">Elapsed Time</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px" id="elapsedHint">from start date</div>
+          </div>
+          <div class="timer-val" id="elapsed">00:00:00</div>
+        </div>
+
+        <!-- COUNTDOWN -->
+        <div class="countdown-box">
+          <div>
+            <div class="timer-lbl">Countdown</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px" id="countdownHint">remaining production time</div>
+          </div>
+          <div class="countdown-val" id="countdown">—</div>
+        </div>
+
+        <!-- TROUBLE TIMER -->
+        <div class="breakdown-note" id="activeTroubleBox" style="display:none">
+          <div><strong>สถานะ:</strong> <span id="activeIssueStatus">—</span></div>
+          <div>เวลาเริ่มขัดข้อง: <span id="activeTroubleStart">—</span></div>
+          <div>เวลาขัดข้องรวม: <span id="activeTroubleTotal">—</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FINISH CARD -->
+  <div>
+    <div class="card" style="height:100%">
+      <div class="card-head">
+        <div class="card-title">✅ Latest Finished</div>
+        <span class="badge badge-done">Finished</span>
+      </div>
+      <div class="card-body">
+        <div class="frow"><span class="fk">Queue</span><span class="fv" id="finishQueue">—</span></div>
+        <div class="frow"><span class="fk">Order No</span><span class="fv mono" id="finishOrderNo"></span></div>
+        <div class="frow"><span class="fk">Work No</span><span class="fv mono" id="finishWorkNo">—</span></div>
+        <div class="frow"><span class="fk">Sheet Type</span><span class="fv" id="finishSheetType"></span></div>
+        <div class="frow"><span class="fk">Customer</span><span class="fv" id="finishCustomer">—</span></div>
+        <div class="frow"><span class="fk">Fabric</span><span class="fv" id="finishFabric">—</span></div>
+        <div class="frow"><span class="fk">Color</span><span class="fv" id="finishColor"></span></div>
+        <div class="frow"><span class="fk">Thickness</span><span class="fv" id="finishThickness"></span></div>
+        <div class="frow"><span class="fk">Width</span><span class="fv" id="finishWidth"></span></div>
+        <div class="frow"><span class="fk">GSM</span><span class="fv" id="finishGsm"></span></div>
+        <div class="frow"><span class="fk">Length</span><span class="fv mono" id="finishLength">—</span></div>
+        <div class="frow"><span class="fk">Forecast</span><span class="fv" id="finishForecast">—</span></div>
+        <div class="frow"><span class="fk">Actual Time</span><span class="fv mono amber" id="finishActualTime"></span></div>
+        <div class="frow"><span class="fk">Trouble Time</span><span class="fv mono" id="finishTroubleTime"></span></div>
+        <div class="frow"><span class="fk">Start Date</span><span class="fv mono" id="finishStartDate">—</span></div>
+        <div class="frow"><span class="fk">Finished Date</span><span class="fv mono green" id="finishDoneDate">—</span></div>
+        <div class="frow"><span class="fk">Worker</span><span class="fv mono amber" id="finishWorker">—</span></div>
+        <div class="frow"><span class="fk">Remark</span><span class="fv" id="finishRemark"></span></div>
+        <div class="breakdown-note" id="dataStatus">Loading live data from API...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- QUEUE TABLE -->
+<div class="queue-card">
+  <div class="q-head">
+    <div class="q-title">📋 Queue Table</div>
+    <div class="q-count" id="queueCount">—</div>
+  </div>
+  <table>
+    <thead>
+     <tr>
+      <th>QUEUE</th>
+      <th>STATUS</th>
+      <th>ORDER NO</th>
+      <th>WORK NO</th>
+      <th>CUSTOMER</th>
+      <th>FABRIC</th>
+      <th>COLOR</th>
+      <th>THICKNESS</th>
+      <th>LENGTH</th>
+      <th>FORECAST</th>
+     </tr>
+    </thead>
+    <tbody id="queueBody">
+      <tr><td colspan="8">Loading live data...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+</main>
+
+<footer id="footerStatus">
+  Production Monitor Dashboard · Live API data
+</footer>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbwPjl-aVAejctTmQaIK7AppNwF0d8JAT1__G83URzFzFGQtSSZZ7rWtdEJP5sRoTFQQ/exec";
+const RUNNING_STATUS = "กำลังดำเนินงาน";
+const ISSUE_STATUSES = [
+  "ล่าช้ากว่ากำหนด",
+  "ไฟดับ",
+  "เหตุขัดข้องที่สารเคมี",
+  "เหตุขัดข้องที่สี",
+  "กำลังเคลียร์เครื่อง"
+];
+const LAST_ACTIVE_KEY = "pvcDashboard.lastActiveOrder";
+const LATEST_FINISHED_KEY = "pvcDashboard.latestFinishedOrder";
+let activeOrder = null;
+
+function $(id){ return document.getElementById(id); }
+function text(id, value){ const el = $(id); if(el) el.textContent = clean(value); }
+function clean(value){ return value === undefined || value === null || value === "" ? "—" : String(value); }
+function htmlEscape(value){
+  return clean(value).replace(/[&<>'"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[ch]));
+}
+function numberValue(value){
+  if(value === undefined || value === null) return 0;
+  if(typeof value === "number") return Number.isFinite(value) ? value : 0;
+  const parsed = parseFloat(String(value).replace(/,/g, "").replace(/[^0-9.-]/g, ""));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+function formatNumber(value){ return numberValue(value).toLocaleString("en-US", { maximumFractionDigits: 2 }); }
+function withUnit(value, unit){ return clean(value) === "—" ? "—" : `${formatNumber(value)} ${unit}`; }
+function pick(row, keys){
+  if(!row) return "";
+  const lookup = Object.create(null);
+  Object.keys(row).forEach(key => lookup[String(key).trim().toLowerCase()] = row[key]);
+  for(const key of keys){
+    if(row[key] !== undefined && row[key] !== null && row[key] !== "") return row[key];
+    const loose = lookup[String(key).trim().toLowerCase()];
+    if(loose !== undefined && loose !== null && loose !== "") return loose;
+  }
+  return "";
+}
+function normalizeRows(payload){
+  const source = Array.isArray(payload) ? payload
+    : Array.isArray(payload?.data) ? payload.data
+    : Array.isArray(payload?.rows) ? payload.rows
+    : Array.isArray(payload?.orders) ? payload.orders
+    : Array.isArray(payload?.items) ? payload.items
+    : [];
+  return source.map((row, index) => ({ raw: row, index, ...normalizeRow(row, index) }));
+}
+function normalizeRow(row, index){
+
+  const queue = pick(row, ["queue"]);
+
+  const orderNo = pick(row, ["orderNo"]);
+  const workNo = pick(row, ["workNo"]);
+  const worker = pick(row, ["worker"]);
+  const customer = pick(row, ["customer"]);
+
+  const sheetType = pick(row, ["sheetType"]);
+  const fabric = pick(row, ["fabric"]);
+  const color = pick(row, ["color"]);
+  const thickness = pick(row, ["thickness"]);
+  const width = pick(row, ["width"]);
+  const gsm = pick(row, ["gsm"]);
+
+  const speed = pick(row, ["speed"]);
+  const length = pick(row, ["length"]);
+  const unit = pick(row, ["unit"]);
+  const forecast = pick(row, ["forecast"]);
+
+  const startDate = pick(row, ["startDate"]);
+  const dueDate = pick(row, ["dueDate"]);
+
+  const status = pick(row, ["status"]);
+
+  const troubleStart = pick(row, ["troubleStart"]);
+  const troubleTime = pick(row, ["troubleTime"]);
+
+  const finishDate = pick(row, ["finishDate"]);
+  const actualTime = pick(row, ["actualTime"]);
+  const remark = pick(row, ["remark"]);
+
+  return {
+
+    queue: queue || index + 1,
+
+    orderNo,
+    workNo,
+    worker,
+    customer,
+
+    sheetType,
+    fabric,
+    color,
+    thickness,
+    width,
+    gsm,
+
+    speed,
+    length,
+    unit,
+    forecast,
+
+    startDate,
+    dueDate,
+
+    status,
+
+    troubleStart,
+    troubleTime,
+
+    finishDate,
+    actualTime,
+    remark
+
+  };
+
+}
+function isRunning(order){ return String(order?.status || "").trim() === RUNNING_STATUS; }
+function isIssue(order){ return ISSUE_STATUSES.includes(String(order?.status || "").trim()); }
+function isActiveProduction(order){ return isRunning(order) || isIssue(order); }
+function isWaiting(order){ return !isActiveProduction(order) && /รอ|wait|waiting|queue/i.test(String(order?.status || "")); }
+function isFinished(order){ return /เสร็จ|finish|finished|complete|completed|done/i.test(String(order?.status || "")); }
+function parseDate(value){
+  if(value instanceof Date && !isNaN(value)) return value;
+  if(typeof value === "number" && Number.isFinite(value)) return new Date(Math.round((value - 25569) * 86400 * 1000));
+  const raw = String(value || "").trim();
+  if(!raw) return null;
+  const nativeDate = new Date(raw);
+  if(!isNaN(nativeDate)) return nativeDate;
+  const match = raw.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if(match){
+    let [, d, m, y, hh = 0, mm = 0, ss = 0] = match;
+    y = Number(y);
+    if(y < 100) y += 2000;
+    if(y > 2400) y -= 543;
+    return new Date(y, Number(m) - 1, Number(d), Number(hh), Number(mm), Number(ss));
+  }
+  return null;
+}
+function formatDate(value){
+  const date = parseDate(value);
+  if(!date) return clean(value);
+  return date.toLocaleString("th-TH", { year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit" });
+}
+function formatClock(ms){
+  if(!Number.isFinite(ms)) return "—";
+  const sign = ms < 0 ? "-" : "";
+  let seconds = Math.floor(Math.abs(ms) / 1000);
+  const h = Math.floor(seconds / 3600); seconds %= 3600;
+  const m = Math.floor(seconds / 60); seconds %= 60;
+  return `${sign}${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(seconds).padStart(2,"0")}`;
+}
+function formatDuration(ms){
+  if(!Number.isFinite(ms) || ms < 0) return "—";
+  const minutes = Math.round(ms / 60000);
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if(h && m) return `${h} ชม. ${m} นาที`;
+  if(h) return `${h} ชม.`;
+  return `${m} นาที`;
+}
+function parseDurationMs(value){
+  if(typeof value === "number" && Number.isFinite(value)) return value * 60000;
+  const raw = String(value || "").trim();
+  if(!raw) return 0;
+  const clock = raw.match(/(-?\d+):(\d{2})(?::(\d{2}))?/);
+  if(clock){
+    const h = Number(clock[1]);
+    const m = Number(clock[2]);
+    const s = Number(clock[3] || 0);
+    return ((h * 3600) + (m * 60) + s) * 1000;
+  }
+  const day = Number((raw.match(/(\d+(?:\.\d+)?)\s*(?:วัน|day)/i) || [0,0])[1]);
+  const hour = Number((raw.match(/(\d+(?:\.\d+)?)\s*(?:ชม\.?|ชั่วโมง|hour|hr)/i) || [0,0])[1]);
+  const minute = Number((raw.match(/(\d+(?:\.\d+)?)\s*(?:นาที|min|minute)/i) || [0,0])[1]);
+  const second = Number((raw.match(/(\d+(?:\.\d+)?)\s*(?:วินาที|sec|second)/i) || [0,0])[1]);
+  return (((day * 24 + hour) * 60 + minute) * 60 + second) * 1000;
+}
+function troubleMs(order, now = new Date()){
+  if(!order) return 0;
+  const saved = parseDurationMs(order.troubleTime);
+  const troubleStart = parseDate(order.troubleStart);
+  const currentStop = isIssue(order) && troubleStart ? Math.max(0, now - troubleStart) : 0;
+  return saved + currentStop;
+}
+function productionElapsedMs(order, now = new Date()){
+  const start = parseDate(order?.startDate);
+  if(!start) return 0;
+  return Math.max(0, (now - start) - troubleMs(order, now));
+}
+function forecastText(order){
+  if(clean(order.forecast) !== "—") return order.forecast;
+  const length = numberValue(order.length);
+  const speed = numberValue(order.speed);
+  return length > 0 && speed > 0 ? formatDuration((length / speed) * 60000) : "—";
+}
+function lengthText(order){
+  return order && clean(order.length) !== "—" ? withUnit(order.length, clean(order.unit) === "—" ? "length" : order.unit) : "—";
+}
+function statusBadge(order){
+  if(isRunning(order)) return `<span class="badge badge-run">● ${htmlEscape(order.status)}</span>`;
+  if(isIssue(order)) return `<span class="badge badge-wait">${htmlEscape(order.status)}</span>`;
+  if(isWaiting(order)) return `<span class="badge badge-wait">${htmlEscape(order.status)}</span>`;
+  if(isFinished(order)) return `<span class="badge badge-done">${htmlEscape(order.status)}</span>`;
+  return `<span class="badge badge-wait">${htmlEscape(order.status)}</span>`;
+}
+function finishSortDate(order){
+  return parseDate(order?.finishedDate) || parseDate(order?.finishDate) || parseDate(order?.completedAt) || parseDate(order?.doneDate) || parseDate(order?.cachedFinishedAt) || parseDate(order?.dueDate) || parseDate(order?.startDate) || new Date(0);
+}
+function latestFinishedOrder(rows){
+  return rows.filter(isFinished).sort((a,b) => finishSortDate(b) - finishSortDate(a))[0];
+}
+function sameOrder(a, b){
+  if(!a || !b) return false;
+  const aw = clean(a.workNo);
+  const bw = clean(b.workNo);
+  const aq = clean(a.queue);
+  const bq = clean(b.queue);
+  return aw !== "—" && bw !== "—" && aw === bw && aq === bq;
+}
+function readStoredOrder(key){
+  try { return JSON.parse(localStorage.getItem(key) || "null"); }
+  catch(error){ return null; }
+}
+function storeOrder(key, order){
+  if(!order) return;
+  try { localStorage.setItem(key, JSON.stringify(order)); }
+  catch(error){ console.warn(error); }
+}
+function cacheLatestFinished(order, finishedAt = new Date()){
+  if(!order) return null;
+  const finished = {
+    ...order,
+    status: "เสร็จสิ้น",
+    finishedDate: order.finishedDate || order.finishDate || finishedAt.toISOString(),
+    cachedFinishedAt: finishedAt.toISOString()
+  };
+  storeOrder(LATEST_FINISHED_KEY, finished);
+  return finished;
+}
+function resolveLatestFinished(rows, currentActive){
+  const fromApi = latestFinishedOrder(rows);
+  if(fromApi) return cacheLatestFinished(fromApi, finishSortDate(fromApi));
+  const storedLatest = readStoredOrder(LATEST_FINISHED_KEY);
+  const lastActive = readStoredOrder(LAST_ACTIVE_KEY);
+  const activeStillInApi = lastActive && rows.some(row => sameOrder(row, lastActive));
+  if(lastActive && !activeStillInApi && (!currentActive || !sameOrder(currentActive, lastActive))){
+    return cacheLatestFinished(lastActive);
+  }
+  return storedLatest;
+}
+function renderKpis(rows, latestFinished){
+  const running = rows.filter(isActiveProduction).length;
+  const waiting = rows.filter(isWaiting).length;
+  const totalLength = rows.reduce((sum, row) => sum + numberValue(row.length), 0);
+  text("kpiRunning", running);
+  text("kpiWaiting", waiting);
+  text("kpiTotalLength", formatNumber(totalLength));
+  text("kpiLatestFinished", latestFinished ? formatNumber(latestFinished.length) : "0");
+  text("queueCount", `${running} running · ${waiting} waiting · total ${formatNumber(totalLength)} length`);
+}
+function renderActive(order){
+  activeOrder = order || null;
+  const empty = !order;
+  text("activeTitle", empty ? "No running order" : `Queue #${clean(order.queue)} | ${clean(order.workNo)}`);
+  text("activeQueue", empty ? "—" : `#${clean(order.queue)}`);
+  text("activeWorkNo", order?.workNo);
+  text("activeOrderNo", order?.orderNo);
+  text("activeSheetType", order?.sheetType);
+  text("activeColor", order?.color);
+  text("activeThickness", order?.thickness);
+  text("activeWidth", order?.width);
+  text("activeGsm", order?.gsm);
+  text("activeCustomer", order?.customer);
+  text("activeWorker", order?.worker);
+  text("activeFabric", order?.fabric);
+  text("activeLength", empty ? "—" : lengthText(order));
+  text("activeSpeed", order?.speed);
+  text("activeForecast", empty ? "—" : forecastText(order));
+  text("activeStartDate", order?.startDate ? formatDate(order.startDate) : "—");
+  text("activeDueDate", order?.dueDate ? formatDate(order.dueDate) : "—");
+  text("elapsedHint", order?.startDate ? `from ${formatDate(order.startDate)}` : "from start date");
+  text("countdownHint", order?.dueDate ? "remaining production time" : "to due date");
+  renderTroubleBox(order);
+  updateTimers();
+}
+function renderTroubleBox(order){
+  const box = $("activeTroubleBox");
+  if(!box) return;
+  const show = !!order && (isIssue(order) || clean(order.troubleTime) !== "—" || clean(order.troubleStart) !== "—");
+  box.style.display = show ? "block" : "none";
+  text("activeIssueStatus", order?.status);
+  text("activeTroubleStart", order?.troubleStart ? formatDate(order.troubleStart) : "—");
+  text("activeTroubleTotal", formatDuration(troubleMs(order)));
+}
+function renderLatestFinished(order){
+
+  text("finishQueue", order ? `#${clean(order.queue)}` : "—");
+
+  text("finishOrderNo", order?.orderNo);
+
+  text("finishWorkNo", order?.workNo);
+
+  text("finishCustomer", order?.customer);
+
+  text("finishWorker", order?.worker);
+
+  text("finishSheetType", order?.sheetType);
+
+  text("finishFabric", order?.fabric);
+
+  text("finishColor", order?.color);
+
+  text("finishThickness", order?.thickness);
+
+  text("finishWidth", order?.width);
+
+  text("finishGsm", order?.gsm);
+
+  text("finishLength", order ? lengthText(order) : "—");
+
+  text("finishForecast", order ? forecastText(order) : "—");
+
+  text("finishActualTime", order?.actualTime);
+
+  text("finishTroubleTime", order?.troubleTime);
+
+  text("finishRemark", order?.remark);
+
+  text(
+    "finishStartDate",
+    order?.startDate
+      ? formatDate(order.startDate)
+      : "—"
+  );
+
+  text(
+    "finishDoneDate",
+    order?.finishDate
+      ? formatDate(order.finishDate)
+      : "—"
+  );
+
+}
+function renderTable(rows){
+  const body = $("queueBody");
+
+  if(!body) return;
+
+  if(!rows.length){
+    body.innerHTML =
+      `<tr><td colspan="10">No API rows found.</td></tr>`;
+    return;
+  }
+
+  body.innerHTML = rows.map(order => `
+
+    <tr${isActiveProduction(order)
+      ? ' style="background:rgba(0,229,195,.04)"'
+      : ""}>
+
+      <td class="qn">#${htmlEscape(order.queue)}</td>
+
+      <td>${statusBadge(order)}</td>
+
+      <td class="oid">${htmlEscape(order.orderNo)}</td>
+
+      <td class="oid">${htmlEscape(order.workNo)}</td>
+
+      <td>${htmlEscape(order.customer)}</td>
+
+      <td class="oid">${htmlEscape(order.fabric)}</td>
+
+      <td>${htmlEscape(order.color)}</td>
+
+      <td>${htmlEscape(order.thickness)}</td>
+
+      <td class="qty">${htmlEscape(lengthText(order))}</td>
+
+      <td>${htmlEscape(forecastText(order))}</td>
+
+    </tr>
+
+  `).join("");
+}
+function updateTimers(){
+  const start = parseDate(activeOrder?.startDate);
+  const due = parseDate(activeOrder?.dueDate);
+  const now = new Date();
+  const elapsedProduction = productionElapsedMs(activeOrder, now);
+  const plannedProduction = start && due && due > start ? due - start : NaN;
+  text("elapsed", start ? formatClock(elapsedProduction) : "00:00:00");
+  text("countdown", Number.isFinite(plannedProduction) ? formatClock(plannedProduction - elapsedProduction) : "—");
+  let pct = 0;
+  if(Number.isFinite(plannedProduction) && plannedProduction > 0){
+    pct = Math.max(0, Math.min(100, (elapsedProduction / plannedProduction) * 100));
+  }
+  const prog = $("prog");
+  if(prog) prog.style.width = `${pct}%`;
+  text("pct", `${Math.round(pct)} %`);
+  renderTroubleBox(activeOrder);
+}
+function updateClock(){
+  text("clock", new Date().toLocaleTimeString("th-TH", { hour12:false }));
+}
+async function loadData(){
+  try{
+    const response = await fetch(API_URL, { cache: "no-store" });
+    if(!response.ok) throw new Error(`HTTP ${response.status}`);
+    const payload = await response.json();
+    const rows = normalizeRows(payload);
+    console.log(payload);
+    console.log(rows);
+    const runningOrder = rows.find(isActiveProduction);
+    const latestFinished = resolveLatestFinished(rows, runningOrder);
+    renderKpis(rows, latestFinished);
+    renderActive(runningOrder);
+    renderLatestFinished(latestFinished);
+    renderTable(rows);
+    if(runningOrder) storeOrder(LAST_ACTIVE_KEY, runningOrder);
+    text("dataStatus", `Live data loaded · ${rows.length} rows · ${new Date().toLocaleString("th-TH")}`);
+    text("footerStatus", `Production Monitor Dashboard · Live API data · Updated ${new Date().toLocaleString("th-TH")}`);
+  } catch(error){
+    console.error(error);
+    text("dataStatus", `Unable to load API data: ${error.message}`);
+    text("footerStatus", `Production Monitor Dashboard · API load error · ${new Date().toLocaleString("th-TH")}`);
+    renderActive(null);
+    renderTable([]);
+  }
+}
+
+updateClock();
+loadData();
+setInterval(updateClock, 1000);
+setInterval(updateTimers, 1000);
+setInterval(loadData, 30000);
+</script>
+</body>
+</html>
