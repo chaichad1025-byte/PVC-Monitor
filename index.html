@@ -223,6 +223,47 @@ footer {
 .table-wrap table{
     min-width: 1100px;
 }
+.search-card{
+  margin-top:20px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:20px;
+}
+
+.search-bar{
+  display:flex;
+  gap:10px;
+  margin-top:15px;
+  margin-bottom:15px;
+}
+
+.search-bar input{
+  flex:1;
+  background:#111827;
+  color:white;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:12px;
+}
+
+.search-bar button{
+  background:#00e5c3;
+  color:black;
+  border:none;
+  border-radius:10px;
+  padding:12px 20px;
+  cursor:pointer;
+}
+
+.search-table-wrap{
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+}
+
+.search-table-wrap table{
+  min-width:700px;
+}
 </style>
 </head>
 <body>
@@ -408,6 +449,62 @@ footer {
 
 
 </main>
+<section class="search-card">
+
+<h2>🔍 Search Finished Order</h2>
+
+<div class="search-bar">
+
+<input
+id="searchOrderNo"
+type="text"
+placeholder="Enter Order No">
+
+<button onclick="searchFinishedOrder()">
+Search
+</button>
+
+</div>
+
+<div class="search-table-wrap">
+
+<table>
+
+<thead>
+<tr>
+<th>WORK NO</th>
+<th>CUSTOMER</th>
+<th>FABRIC</th>
+<th>COLOR</th>
+<th>THICKNESS</th>
+<th>WIDTH</th>
+<th>GSM</th>
+<th>LENGTH</th>
+<th>FORECAST</th>
+<th>ACTUAL TIME</th>
+<th>TROUBLE TIME</th>
+<th>START DATE</th>
+<th>FINISH DATE</th>
+<th>WORKER</th>
+<th>REMARK</th>
+</tr>
+</thead>
+
+<tbody id="searchResultBody">
+
+<tr>
+<td colspan="4">
+No results
+</td>
+</tr>
+
+</tbody>
+
+</table>
+
+</div>
+
+</section>
 
 <footer id="footerStatus">
   Production Monitor Dashboard · Live API data
@@ -448,6 +545,7 @@ const ISSUE_STATUSES = [
 const LAST_ACTIVE_KEY = "pvcDashboard.lastActiveOrder";
 const LATEST_FINISHED_KEY = "pvcDashboard.latestFinishedOrder";
 let activeOrder = null;
+let finishRows = [];
 
 function $(id){ return document.getElementById(id); }
 function text(id, value){ const el = $(id); if(el) el.textContent = clean(value); }
@@ -846,7 +944,7 @@ async function loadData(){
     if(!response.ok) throw new Error(`HTTP ${response.status}`);
     const payload = await response.json();                 
     const rows = normalizeRows(payload.data);
-    const finishRows = normalizeRows(payload.finish);
+    finishRows = normalizeRows(payload.finish);
     console.log(payload);
     console.log(rows);
     const runningOrder = rows.find(isActiveProduction);
@@ -868,6 +966,65 @@ async function loadData(){
     renderActive(null);
     renderTable([]);
   }
+}
+function searchFinishedOrder(){
+
+  const orderNo = $("searchOrderNo").value.trim();
+
+  const body = $("searchResultBody");
+
+  if(!orderNo){
+    body.innerHTML =
+      `<tr><td colspan="4">Enter Order No</td></tr>`;
+    return;
+  }
+
+  const result = finishRows.filter(
+    row => String(row.orderNo).trim() === orderNo
+  );
+
+  if(result.length === 0){
+    body.innerHTML =
+      `<tr><td colspan="4">No results</td></tr>`;
+    return;
+  }
+
+  body.innerHTML = result.map(row => `
+<tr>
+
+<td class="mono">${clean(row.workNo)}</td>
+
+<td>${clean(row.customer)}</td>
+
+<td class="blue">${clean(row.fabric)}</td>
+
+<td>${clean(row.color)}</td>
+
+<td>${clean(row.thickness)}</td>
+
+<td>${clean(row.width)}</td>
+
+<td>${clean(row.gsm)}</td>
+
+<td class="mono">${lengthText(row)}</td>
+
+<td>${forecastText(row)}</td>
+
+<td class="amber">${clean(row.actualTime)}</td>
+
+<td>${clean(row.troubleTime)}</td>
+
+<td>${row.startDate ? formatDate(row.startDate) : "—"}</td>
+
+<td class="green">${row.finishDate ? formatDate(row.finishDate) : "—"}</td>
+
+<td class="amber">${clean(row.worker)}</td>
+
+<td>${clean(row.remark)}</td>
+
+</tr>
+`).join("");
+
 }
 
 updateClock();
