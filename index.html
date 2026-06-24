@@ -820,12 +820,16 @@ async function loadData(){
   try{
     const response = await fetch(API_URL, { cache: "no-store" });
     if(!response.ok) throw new Error(`HTTP ${response.status}`);
-    const payload = await response.json();
-    const rows = normalizeRows(payload);
+    const payload = await response.json();                 
+    const rows = normalizeRows(payload.data);
+    const finishRows = normalizeRows(payload.finish);
     console.log(payload);
     console.log(rows);
     const runningOrder = rows.find(isActiveProduction);
-    const latestFinished = resolveLatestFinished(rows, runningOrder);
+    const latestFinished =
+    finishRows.length > 0
+    ? finishRows[0]
+    : null;
     renderKpis(rows, latestFinished);
     renderActive(runningOrder);
     renderLatestFinished(latestFinished);
