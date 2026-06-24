@@ -412,6 +412,28 @@ footer {
 </footer>
 
 <script>
+ const PASSWORD = "pvc1234";
+
+const inputPassword = prompt("กรุณาใส่รหัสผ่าน");
+
+if(inputPassword !== PASSWORD){
+  document.body.innerHTML = `
+    <div style="
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      height:100vh;
+      background:#111827;
+      color:white;
+      font-size:24px;
+      font-family:sans-serif;
+    ">
+      Access Denied
+    </div>
+  `;
+  throw new Error("Access denied");
+}
+
 const API_URL = "https://script.google.com/macros/s/AKfycbwPjl-aVAejctTmQaIK7AppNwF0d8JAT1__G83URzFzFGQtSSZZ7rWtdEJP5sRoTFQQ/exec";
 const RUNNING_STATUS = "กำลังดำเนินงาน";
 const ISSUE_STATUSES = [
