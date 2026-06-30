@@ -1259,6 +1259,21 @@ function searchFinishedOrder(){
   const result = finishRows.filter(
     row => String(row.orderNo).trim() === orderNo
   );
+  let totalLength = 0;
+  let totalOrder = 0;
+  let totalPowder = 0;
+  let totalScarp = 0;
+  let totalLump = 0;
+
+result.forEach(row => {
+
+  totalLength += Number(row.length) || 0;
+  totalOrder += Number(row.orderKg) || 0;
+  totalPowder += Number(row.powderKg) || 0;
+  totalScarp += Number(row.scarpKg) || 0;
+  totalLump += Number(row.lump) || 0;
+
+});
 
   if(result.length === 0){
     body.innerHTML =
@@ -1266,7 +1281,8 @@ function searchFinishedOrder(){
     return;
   }
 
-  body.innerHTML = result.map(row => `
+ body.innerHTML =
+result.map(row => `
 <tr>
 
 <td class="mono">${clean(row.workNo)}</td>
@@ -1316,8 +1332,61 @@ function searchFinishedOrder(){
 <td>${clean(row.remark)}</td>
 
 </tr>
-`).join("");
+`).join("")
 
++
+
+`
+<tr style="font-weight:bold;background:#f3f4f6;">
+
+<td>TOTAL</td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td>${totalLength.toLocaleString()}</td>
+
+<td></td>
+
+<td>${totalOrder.toLocaleString()}</td>
+
+<td>${totalPowder.toLocaleString()}</td>
+
+<td>${totalScarp.toLocaleString()}</td>
+
+<td>${totalLump.toLocaleString()}</td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+</tr>
+`;
 }
 
 updateClock();
