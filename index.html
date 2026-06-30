@@ -668,6 +668,12 @@ footer {
         <div class="frow"><span class="fk">Width</span><span class="fv" id="finishWidth"></span></div>
         <div class="frow"><span class="fk">GSM</span><span class="fv" id="finishGsm"></span></div>
         <div class="frow"><span class="fk">Length</span><span class="fv mono" id="finishLength">—</span></div>
+        <div class="frow"><span class="fk">Order (KG)</span><span class="fv mono" id="finishOrderKg">—</span></div>
+        <div class="frow"><span class="fk">Powder (KG)</span><span class="fv mono" id="finishPowderKg">—</span></div>
+        <div class="frow"><span class="fk">Scrap (KG)</span><span class="fv mono" id="finishScarpKg">—</span></div>
+        <div class="frow"><span class="fk">Lump Order</span><span class="fv mono" id="finishLump">—</span></div>
+        <div class="frow"><span class="fk">Powder Rate</span><span class="fv mono" id="finishPowderRate">—</span></div>
+        <div class="frow"><span class="fk">Scrap Rate</span><span class="fv mono" id="finishScarpRate">—</span></div>
         <div class="frow"><span class="fk">Forecast</span><span class="fv" id="finishForecast">—</span></div>
         <div class="frow"><span class="fk">Actual Time</span><span class="fv mono amber" id="finishActualTime"></span></div>
         <div class="frow"><span class="fk">Trouble Time</span><span class="fv mono" id="finishTroubleTime"></span></div>
@@ -708,12 +714,20 @@ Search
 <tr>
 <th>WORK NO</th>
 <th>CUSTOMER</th>
+<th>SHEET TYPE</th>
 <th>FABRIC</th>
 <th>COLOR</th>
 <th>THICKNESS</th>
 <th>WIDTH</th>
 <th>GSM</th>
 <th>LENGTH</th>
+<th>SPEED</th>
+<th>ORDER (KG)</th>
+<th>POWDER (KG)</th>
+<th>SCRAP (KG)</th>
+<th>LUMP ORDER</th>
+<th>POWDER RATE</th>
+<th>SCRAP RATE</th>
 <th>FORECAST</th>
 <th>ACTUAL TIME</th>
 <th>TROUBLE TIME</th>
@@ -727,7 +741,7 @@ Search
 <tbody id="searchResultBody">
 
 <tr>
-<td colspan="4">
+<td colspan="21">
 No results
 </td>
 </tr>
@@ -847,6 +861,12 @@ function normalizeRow(row, index){
   const finishDate = pick(row, ["finishDate"]);
   const actualTime = pick(row, ["actualTime"]);
   const remark = pick(row, ["remark"]);
+  const orderKg = pick(row, ["orderKg"]);
+ const powderKg = pick(row, ["powderKg"]);
+ const scarpKg = pick(row, ["scarpKg"]);
+ const lump = pick(row, ["lump"]);
+ const powderRate = pick(row, ["powderRate"]);
+ const scarpRate = pick(row, ["scarpRate"]);
 
   return {
 
@@ -879,7 +899,14 @@ function normalizeRow(row, index){
 
     finishDate,
     actualTime,
-    remark
+    remark,
+    
+    orderKg,
+    powderKg,
+    scarpKg,
+    lump,
+    powderRate,
+    scarpRate
 
   };
 
@@ -1087,6 +1114,17 @@ function renderLatestFinished(order){
   text("finishGsm", order?.gsm);
 
   text("finishLength", order ? lengthText(order) : "—");
+  text("finishOrderKg", order?.orderKg);
+
+  text("finishPowderKg", order?.powderKg);
+
+  text("finishScarpKg", order?.scarpKg);
+
+  text("finishLump", order?.lump);
+
+  text("finishPowderRate", order?.powderRate);
+
+  text("finishScarpRate", order?.scarpRate);
 
   text("finishForecast", order ? forecastText(order) : "—");
 
@@ -1230,6 +1268,8 @@ function searchFinishedOrder(){
 
 <td>${clean(row.customer)}</td>
 
+<td>${clean(row.sheetType)}</td>
+
 <td class="blue">${clean(row.fabric)}</td>
 
 <td>${clean(row.color)}</td>
@@ -1241,6 +1281,20 @@ function searchFinishedOrder(){
 <td>${clean(row.gsm)}</td>
 
 <td class="mono">${lengthText(row)}</td>
+
+<td>${clean(row.speed)}</td>
+
+<td>${clean(row.orderKg)}</td>
+
+<td>${clean(row.powderKg)}</td>
+
+<td>${clean(row.scarpKg)}</td>
+
+<td>${clean(row.lump)}</td>
+
+<td>${clean(row.powderRate)}</td>
+
+<td>${clean(row.scarpRate)}</td>
 
 <td>${forecastText(row)}</td>
 
