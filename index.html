@@ -668,6 +668,7 @@ footer {
         <div class="frow"><span class="fk">Width</span><span class="fv" id="finishWidth"></span></div>
         <div class="frow"><span class="fk">GSM</span><span class="fv" id="finishGsm"></span></div>
         <div class="frow"><span class="fk">Length</span><span class="fv mono" id="finishLength">—</span></div>
+        <div class="frow"><span class="fk">Speed</span><span class="fv mono" id="finishSpeed">—</span></div>
         <div class="frow"><span class="fk">Order (KG)</span><span class="fv mono" id="finishOrderKg">—</span></div>
         <div class="frow"><span class="fk">Powder (KG)</span><span class="fv mono" id="finishPowderKg">—</span></div>
         <div class="frow"><span class="fk">Scrap (KG)</span><span class="fv mono" id="finishScarpKg">—</span></div>
@@ -1114,6 +1115,10 @@ function renderLatestFinished(order){
   text("finishGsm", order?.gsm);
 
   text("finishLength", order ? lengthText(order) : "—");
+  text(
+    "finishSpeed",
+    order ? withUnit(order.speed,"เมตร/นาที") : "—"
+);
   text("finishOrderKg", order?.orderKg);
 
   text("finishPowderKg", order?.powderKg);
