@@ -1342,7 +1342,15 @@ function renderTable(rows){
 }
 let outputViewMode = "day";
 function formatShortDate(date){
-  return date.toLocaleDateString("th-TH", { day:"2-digit", month:"2-digit" });
+
+    const month = [
+        "ม.ค.","ก.พ.","มี.ค.","เม.ย.",
+        "พ.ค.","มิ.ย.","ก.ค.","ส.ค.",
+        "ก.ย.","ต.ค.","พ.ย.","ธ.ค."
+    ];
+
+    return `${date.getDate()} ${month[date.getMonth()]}`;
+
 }
 function startOfWeek(date){
   const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
