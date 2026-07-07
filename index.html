@@ -574,7 +574,31 @@ footer {
 }
 .view-btn:hover{ background:#e2e8f0; }
 .view-btn.active{ background:#2563eb; color:#ffffff; box-shadow:0 1px 4px rgba(37,99,235,.35); }
+.chart-wrapper{
+    position:relative;
+}
 
+#chartTooltip{
+    position:fixed;
+    display:none;
+
+    background:#fff;
+    color:#111827;
+
+    border:1px solid #dbe4ee;
+    border-radius:10px;
+
+    padding:10px 14px;
+
+    box-shadow:0 10px 30px rgba(0,0,0,.15);
+
+    font-size:13px;
+    line-height:1.5;
+
+    pointer-events:none;
+
+    z-index:999999;
+}
 </style>
 </head>
 <body>
@@ -1460,6 +1484,8 @@ const dots = coords.map((p,i)=>`
 <title>${p.p.label} | ความยาว ${formatNumber(p.p.length)} หลา</title>
 
 <circle
+class="chart-point"
+data-index="${i}"
 cx="${p.x}"
 cy="${p.y}"
 r="6"
@@ -1542,7 +1568,7 @@ ${formatNumber(average)}
     ${xLabels}
 
 </svg>
-
+<div id="chartTooltip"></div>
 </div>
 `;
 }
@@ -1573,8 +1599,9 @@ function renderOutputChart(rowsOverride){
 
   const totalLen = points.reduce((sum, p) => sum + p.length, 0);
   text("outputCount", `${points.length} ${unitLabel} · รวม ${formatNumber(totalLen)}`);
-  body.innerHTML = buildLineChartSVG(points);
-  console.log("init");
+ body.innerHTML = buildLineChartSVG(points);
+
+ initChartTooltip(points);
 }
 function setHint(id, value){ const el = $(id); if(el) el.textContent = value || ""; }
 function formatThaiFull(dateStr){
@@ -1807,7 +1834,59 @@ result.map(row => `
 </tr>
 `;
 }
+function initChartTooltip(points){
 
+    const tooltip = document.getElementById("chartTooltip");
+
+    document.querySelectorAll(".chart-point").forEach(point=>{
+
+        const show = (x,y)=>{
+
+            const p = points[Number(point.dataset.index)];
+
+            tooltip.innerHTML = `
+                <b>${p.label}</b><br>
+                ความยาว : ${formatNumber(p.length)} หลา
+            `;
+
+            tooltip.style.display = "block";
+            tooltip.style.left = (x + 15) + "px";
+            tooltip.style.top  = (y - 70) + "px";
+        };
+
+        point.addEventListener("mouseenter",(e)=>{
+            show(e.clientX,e.clientY);
+        });
+
+        point.addEventListener("mousemove",(e)=>{
+            show(e.clientX,e.clientY);
+        });
+
+        point.addEventListener("mouseleave",()=>{
+            tooltip.style.display="none";
+        });
+
+        point.addEventListener("touchstart",(e)=>{
+
+            e.preventDefault();
+
+            const t = e.touches[0];
+
+            show(t.clientX,t.clientY);
+
+        });
+
+        point.addEventListener("touchend",()=>{
+
+            setTimeout(()=>{
+                tooltip.style.display="none";
+            },1200);
+
+        });
+
+    });
+
+}
 
 attachOutputControls();
 updateClock();
