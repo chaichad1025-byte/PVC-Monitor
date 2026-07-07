@@ -496,6 +496,84 @@ footer {
 .search-table-wrap table{
   min-width:700px;
 }
+.date-toolbar{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  flex-wrap:wrap;
+  background:#f8fafc;
+  border:1px solid #e2e8f0;
+  border-radius:12px;
+  padding:10px 14px;
+}
+.date-field{ display:flex; flex-direction:column; gap:3px; }
+.date-field label{
+  font-size:10px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  color:#94a3b8;
+}
+.date-field label.invisible{ visibility:hidden; }
+.date-field input{
+  height:36px;
+  border:1px solid #cbd5e1;
+  border-radius:8px;
+  padding:0 10px;
+  font-size:13px;
+  font-family:'Sarabun',sans-serif;
+  color:#1f2937;
+  background:#ffffff;
+}
+.date-hint{
+  font-size:10px;
+  color:#2563eb;
+  font-weight:600;
+  min-height:13px;
+}
+.date-hint.invisible{ visibility:hidden; }
+.date-sep{
+  height:36px;
+  display:flex;
+  align-items:center;
+  color:#94a3b8;
+  font-size:15px;
+}
+.toolbar-btn{
+  height:36px;
+  background:#ffffff;
+  color:#475569;
+  border:1px solid #cbd5e1;
+  border-radius:8px;
+  padding:0 14px;
+  font-size:12px;
+  font-weight:600;
+  cursor:pointer;
+  transition:.2s;
+  font-family:'Sarabun',sans-serif;
+}
+.toolbar-btn:hover{ background:#f1f5f9; }
+.view-toggle{
+  display:flex;
+  gap:4px;
+  background:#f1f5f9;
+  padding:4px;
+  border-radius:10px;
+}
+.view-btn{
+  background:transparent;
+  color:#475569;
+  border:none;
+  border-radius:7px;
+  padding:6px 14px;
+  font-size:12px;
+  font-weight:600;
+  cursor:pointer;
+  transition:.2s;
+  font-family:'Sarabun',sans-serif;
+}
+.view-btn:hover{ background:#e2e8f0; }
+.view-btn.active{ background:#2563eb; color:#ffffff; box-shadow:0 1px 4px rgba(37,99,235,.35); }
 </style>
 </head>
 <body>
@@ -645,6 +723,48 @@ footer {
           <div>เวลาเริ่มขัดข้อง: <span id="activeTroubleStart">—</span></div>
           <div>เวลาขัดข้องรวม: <span id="activeTroubleTotal">—</span></div>
         </div>
+      </div>
+    </div>
+
+    <!-- PRODUCTION OUTPUT -->
+    <div class="card" style="margin-top:18px">
+      <div class="card-head" style="flex-direction:column; align-items:stretch; gap:14px">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px">
+          <div>
+            <div class="card-title">📈 Production Output</div>
+            <span class="q-count" id="outputCount">—</span>
+          </div>
+          <div class="view-toggle">
+            <button type="button" class="view-btn active" data-view="day">รายวัน</button>
+            <button type="button" class="view-btn" data-view="week">รายสัปดาห์</button>
+            <button type="button" class="view-btn" data-view="month">รายเดือน</button>
+          </div>
+        </div>
+        <div class="date-toolbar">
+          <div class="date-field">
+            <label for="outputFrom">จากวันที่</label>
+            <input type="date" id="outputFrom" lang="th">
+            <span class="date-hint" id="outputFromHint"></span>
+          </div>
+          <div class="date-field">
+            <label class="invisible">·</label>
+            <span class="date-sep">→</span>
+            <span class="date-hint invisible">·</span>
+          </div>
+          <div class="date-field">
+            <label for="outputTo">ถึงวันที่</label>
+            <input type="date" id="outputTo" lang="th">
+            <span class="date-hint" id="outputToHint"></span>
+          </div>
+          <div class="date-field">
+            <label class="invisible">·</label>
+            <button type="button" class="toolbar-btn" id="outputClear">ล้างตัวกรอง</button>
+            <span class="date-hint invisible">·</span>
+          </div>
+        </div>
+      </div>
+      <div class="card-body" id="outputBody">
+        <div style="font-size:13px;color:var(--muted)">Loading...</div>
       </div>
     </div>
   </div>
@@ -1195,6 +1315,216 @@ function renderTable(rows){
 
   `).join("");
 }
+let outputViewMode = "day";
+function formatShortDate(date){
+  return date.toLocaleDateString("th-TH", { day:"2-digit", month:"2-digit" });
+}
+function startOfWeek(date){
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const day = d.getDay();
+  const diff = (day === 0 ? -6 : 1) - day;
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+function endOfWeek(date){
+  const s = startOfWeek(date);
+  const e = new Date(s);
+  e.setDate(e.getDate() + 6);
+  return e;
+}
+function groupByPeriod(rows, mode, fromDate, toDate){
+  const map = new Map();
+  rows.forEach(order => {
+    const date = parseDate(order.finishDate);
+    if(!date) return;
+    if(fromDate && date < fromDate) return;
+    if(toDate && date > toDate) return;
+    let sortDate, key, label;
+    if(mode === "week"){
+      sortDate = startOfWeek(date);
+      key = sortDate.getTime();
+      label = `${formatShortDate(sortDate)}-${formatShortDate(endOfWeek(date))}`;
+    } else if(mode === "month"){
+      sortDate = new Date(date.getFullYear(), date.getMonth(), 1);
+      key = sortDate.getTime();
+      label = sortDate.toLocaleDateString("th-TH", { month:"2-digit", year:"numeric" });
+    } else {
+      sortDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      key = sortDate.getTime();
+      label = formatShortDate(sortDate);
+    }
+    const entry = map.get(key) || { length:0, count:0, sortDate, label };
+    entry.length += numberValue(order.length);
+    entry.count += 1;
+    map.set(key, entry);
+  });
+  return [...map.values()].sort((a,b) => a.sortDate - b.sortDate);
+}
+function buildLineChartSVG(points){
+  const width = 680;
+  const height = 260;
+  const padL = 60;
+  const padR = 16;
+  const padT = 30;
+  const padB = 36;
+  const chartW = width - padL - padR;
+  const chartH = height - padT - padB;
+  const maxVal = Math.max(...points.map(p => p.length), 1);
+
+// ===== Scale =====
+const majorStep = 10000;
+const minorStep = 5000;
+
+// ปัดขึ้นให้เต็มหลัก
+const maxValue =
+Math.ceil(maxVal / majorStep) * majorStep;
+
+const stepX =
+points.length > 1
+? chartW / (points.length - 1)
+: 0;
+  const coords = points.map((p, i) => ({
+    x: padL + (points.length > 1 ? stepX * i : chartW / 2),
+    y:padT +chartH -(p.length / maxValue) * chartH,
+    p
+  }));
+
+  const linePath = coords.map((c,i) => `${i===0 ? "M" : "L"}${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(" ");
+
+   let gridLines = "";
+
+for(let value=0; value<=maxValue; value+=minorStep){
+
+    const y =
+    padT +
+    chartH -
+    (value/maxValue)*chartH;
+
+    const major =
+    value % majorStep === 0;
+
+    gridLines += `
+    
+    <line
+        x1="${padL}"
+        y1="${y}"
+        x2="${width-padR}"
+        y2="${y}"
+
+        stroke="${major ? "#d1d5db" : "#edf2f7"}"
+
+        stroke-width="${major ? 1.4 : 0.8}"
+
+        stroke-dasharray="${major ? "" : "4 4"}"
+    />
+
+    ${
+        major
+        ?
+        `<text
+            x="${padL-10}"
+            y="${y+4}"
+            text-anchor="end"
+
+            font-size="11"
+
+            fill="#64748b"
+
+            font-family="'IBM Plex Mono',monospace"
+
+        >
+
+        ${value.toLocaleString()}
+
+        </text>`
+        :
+        ""
+    }
+
+    `;
+}
+
+  const xLabels = coords.map(c =>
+    `<text x="${c.x.toFixed(1)}" y="${(height-padB+18).toFixed(1)}" text-anchor="middle" font-size="10" fill="#64748b">${htmlEscape(c.p.label)}</text>`
+  ).join("");
+
+  const dots = coords.map(c =>
+    `<circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="5" fill="#2563eb" stroke="#ffffff" stroke-width="2"><title>${htmlEscape(c.p.label)}: ${formatNumber(c.p.length)} (${c.p.count} orders)</title></circle>`
+  ).join("");
+
+  return `<svg viewBox="0 0 ${width} ${height}" style="width:100%;height:auto;display:block;overflow:visible">
+    ${gridLines}
+    <line x1="${padL}" y1="${(padT+chartH).toFixed(1)}" x2="${width-padR}" y2="${(padT+chartH).toFixed(1)}" stroke="#cbd5e1" stroke-width="1.5"/>
+    <path d="${linePath}" fill="none" stroke="#0f766e" stroke-width="3.5"/>
+    ${dots}
+    ${xLabels}
+  </svg>`;
+}
+function renderOutputChart(rowsOverride){
+  const body = $("outputBody");
+  if(!body) return;
+  const rows = rowsOverride || finishRows;
+
+  const fromVal = $("outputFrom")?.value;
+  const toVal = $("outputTo")?.value;
+  const fromDate = fromVal ? new Date(`${fromVal}T00:00:00`) : null;
+  const toDate = toVal ? new Date(`${toVal}T23:59:59`) : null;
+
+  let points = groupByPeriod(rows, outputViewMode, fromDate, toDate);
+
+  const maxPoints = outputViewMode === "day" ? 14 : 12;
+  if(!fromDate && !toDate && points.length > maxPoints){
+    points = points.slice(-maxPoints);
+  }
+
+  const unitLabel = outputViewMode === "day" ? "วัน" : outputViewMode === "week" ? "สัปดาห์" : "เดือน";
+
+  if(!points.length){
+    text("outputCount", "ไม่มีข้อมูล");
+    body.innerHTML = `<div style="font-size:13px;color:var(--muted)">ไม่มีข้อมูลในช่วงที่เลือก</div>`;
+    return;
+  }
+
+  const totalLen = points.reduce((sum, p) => sum + p.length, 0);
+  text("outputCount", `${points.length} ${unitLabel} · รวม ${formatNumber(totalLen)}`);
+  body.innerHTML = buildLineChartSVG(points);
+}
+function setHint(id, value){ const el = $(id); if(el) el.textContent = value || ""; }
+function formatThaiFull(dateStr){
+  if(!dateStr) return "";
+  const d = new Date(`${dateStr}T00:00:00`);
+  if(isNaN(d)) return "";
+  return d.toLocaleDateString("th-TH", { day:"numeric", month:"short", year:"numeric" });
+}
+function attachOutputControls(){
+  const buttons = document.querySelectorAll(".view-btn");
+  buttons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      buttons.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      outputViewMode = btn.dataset.view;
+      renderOutputChart();
+    });
+  });
+  const fromInput = $("outputFrom");
+  const toInput = $("outputTo");
+  if(fromInput) fromInput.addEventListener("change", () => {
+    setHint("outputFromHint", formatThaiFull(fromInput.value));
+    renderOutputChart();
+  });
+  if(toInput) toInput.addEventListener("change", () => {
+    setHint("outputToHint", formatThaiFull(toInput.value));
+    renderOutputChart();
+  });
+  const clearBtn = $("outputClear");
+  if(clearBtn) clearBtn.addEventListener("click", () => {
+    if(fromInput) fromInput.value = "";
+    if(toInput) toInput.value = "";
+    setHint("outputFromHint", "");
+    setHint("outputToHint", "");
+    renderOutputChart();
+  });
+}
 function updateTimers(){
   const start = parseDate(activeOrder?.startDate);
   const due = parseDate(activeOrder?.dueDate);
@@ -1222,6 +1552,7 @@ async function loadData(){
     const payload = await response.json();                 
     const rows = normalizeRows(payload.data);
     finishRows = normalizeRows(payload.finish);
+    renderOutputChart();
     console.log(payload);
     console.log(rows);
     const runningOrder = rows.find(isActiveProduction);
@@ -1242,6 +1573,7 @@ async function loadData(){
     text("footerStatus", `Production Monitor Dashboard · API load error · ${new Date().toLocaleString("th-TH")}`);
     renderActive(null);
     renderTable([]);
+    renderOutputChart([]);
   }
 }
 function searchFinishedOrder(){
@@ -1389,6 +1721,7 @@ result.map(row => `
 `;
 }
 
+attachOutputControls();
 updateClock();
 loadData();
 setInterval(updateClock, 1000);
