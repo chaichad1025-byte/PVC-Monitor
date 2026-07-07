@@ -574,6 +574,7 @@ footer {
 }
 .view-btn:hover{ background:#e2e8f0; }
 .view-btn.active{ background:#2563eb; color:#ffffff; box-shadow:0 1px 4px rgba(37,99,235,.35); }
+
 </style>
 </head>
 <body>
@@ -1371,6 +1372,10 @@ function buildLineChartSVG(points){
   const chartH = height - padT - padB;
   const maxVal = Math.max(...points.map(p => p.length), 1);
 
+  const average =
+  points.reduce((sum,p)=>sum+p.length,0)
+ / points.length;
+
 // ===== Scale =====
 const majorStep = 10000;
 const minorStep = 5000;
@@ -1448,17 +1453,98 @@ for(let value=0; value<=maxValue; value+=minorStep){
     `<text x="${c.x.toFixed(1)}" y="${(height-padB+18).toFixed(1)}" text-anchor="middle" font-size="10" fill="#64748b">${htmlEscape(c.p.label)}</text>`
   ).join("");
 
-  const dots = coords.map(c =>
-    `<circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="5" fill="#2563eb" stroke="#ffffff" stroke-width="2"><title>${htmlEscape(c.p.label)}: ${formatNumber(c.p.length)} (${c.p.count} orders)</title></circle>`
-  ).join("");
+const dots = coords.map((p,i)=>`
 
-  return `<svg viewBox="0 0 ${width} ${height}" style="width:100%;height:auto;display:block;overflow:visible">
+<g>
+
+<title>${p.p.label} | ความยาว ${formatNumber(p.p.length)} หลา</title>
+
+<circle
+cx="${p.x}"
+cy="${p.y}"
+r="6"
+fill="#2563eb"
+stroke="#fff"
+stroke-width="3"
+style="cursor:pointer"
+/>
+
+</g>
+
+`).join("");
+
+  const avgY =
+  padT +
+  chartH -
+  (average/maxValue)*chartH;
+  const averageLine = `
+
+<line
+x1="${padL}"
+y1="${avgY}"
+x2="${width-padR}"
+y2="${avgY}"
+
+stroke="#2563eb"
+stroke-width="2"
+
+stroke-dasharray="8 6"
+/>
+
+<text
+
+x="${width-padR}"
+
+y="${avgY-8}"
+
+text-anchor="end"
+
+fill="#2563eb"
+
+font-size="11"
+
+font-weight="600"
+
+>
+
+Average
+${formatNumber(average)}
+
+</text>
+
+`;
+
+ return `
+<div class="chart-wrapper">
+
+<svg viewBox="0 0 ${width} ${height}"
+     style="width:100%;height:auto;display:block;overflow:visible">
+
     ${gridLines}
-    <line x1="${padL}" y1="${(padT+chartH).toFixed(1)}" x2="${width-padR}" y2="${(padT+chartH).toFixed(1)}" stroke="#cbd5e1" stroke-width="1.5"/>
-    <path d="${linePath}" fill="none" stroke="#0f766e" stroke-width="3.5"/>
+
+    ${averageLine}
+
+    <line x1="${padL}"
+          y1="${(padT+chartH).toFixed(1)}"
+          x2="${width-padR}"
+          y2="${(padT+chartH).toFixed(1)}"
+          stroke="#cbd5e1"
+          stroke-width="1.5"/>
+
+    <path
+        d="${linePath}"
+        fill="none"
+        stroke="#0f766e"
+        stroke-width="3.5"/>
+
     ${dots}
+
     ${xLabels}
-  </svg>`;
+
+</svg>
+
+</div>
+`;
 }
 function renderOutputChart(rowsOverride){
   const body = $("outputBody");
@@ -1488,6 +1574,7 @@ function renderOutputChart(rowsOverride){
   const totalLen = points.reduce((sum, p) => sum + p.length, 0);
   text("outputCount", `${points.length} ${unitLabel} · รวม ${formatNumber(totalLen)}`);
   body.innerHTML = buildLineChartSVG(points);
+  console.log("init");
 }
 function setHint(id, value){ const el = $(id); if(el) el.textContent = value || ""; }
 function formatThaiFull(dateStr){
@@ -1720,6 +1807,7 @@ result.map(row => `
 </tr>
 `;
 }
+
 
 attachOutputControls();
 updateClock();
