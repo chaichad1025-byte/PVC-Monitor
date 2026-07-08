@@ -649,6 +649,7 @@ footer {
       <th>ORDER NO</th>
       <th>WORK NO</th>
       <th>CUSTOMER</th>
+      <th>SHEET TYPE</th>
       <th>FABRIC</th>
       <th>COLOR</th>
       <th>THICKNESS</th>
@@ -1343,7 +1344,7 @@ function renderTable(rows){
       `<tr><td colspan="10">No API rows found.</td></tr>`;
     return;
   }
-
+  const showRows = rows.slice(0,10);
   body.innerHTML = rows.map(order => `
 
     <tr${isActiveProduction(order)
@@ -1359,6 +1360,8 @@ function renderTable(rows){
       <td class="oid">${htmlEscape(order.workNo)}</td>
 
       <td>${htmlEscape(order.customer)}</td>
+
+      <td>${htmlEscape(order.sheetType)}</td>
 
       <td class="oid">${htmlEscape(order.fabric)}</td>
 
