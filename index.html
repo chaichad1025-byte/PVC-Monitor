@@ -792,10 +792,28 @@ footer {
             <span class="date-hint" id="outputToHint"></span>
           </div>
           <div class="date-field">
-            <label class="invisible">·</label>
-            <button type="button" class="toolbar-btn" id="outputClear">ล้างตัวกรอง</button>
-            <span class="date-hint invisible">·</span>
-          </div>
+    <label class="invisible">·</label>
+
+    <div style="display:flex; gap:8px;">
+
+        <button
+            type="button"
+            class="toolbar-btn"
+            id="outputClear">
+            ล้างตัวกรอง
+        </button>
+
+        <button
+            type="button"
+            class="toolbar-btn"
+            id="saveGraph">
+            บันทึกกราฟ
+        </button>
+
+    </div>
+
+    <span class="date-hint invisible">·</span>
+</div>
         </div>
       </div>
       <div class="card-body" id="outputBody">
@@ -1945,7 +1963,34 @@ function downloadResultImage(){
     });
 
 }
+document.getElementById("saveGraph").addEventListener("click", () => {
 
+    const chart = document.querySelector(".chart-wrapper");
+
+    if(!chart){
+        alert("ไม่พบกราฟ");
+        return;
+    }
+
+    html2canvas(chart,{
+
+        backgroundColor:"#ffffff",
+        scale:2,
+        useCORS:true
+
+    }).then(canvas=>{
+
+        const link = document.createElement("a");
+
+        link.download = "Production Graph.png";
+
+        link.href = canvas.toDataURL("image/png");
+
+        link.click();
+
+    });
+
+});
 attachOutputControls();
 updateClock();
 loadData();
