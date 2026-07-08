@@ -850,9 +850,13 @@ placeholder="Enter Order No">
 Search
 </button>
 
+<button id="saveImageBtn" onclick="downloadResultImage()">
+    📷 Save Image
+</button>
+
 </div>
 
-<div class="search-table-wrap">
+<div id="captureArea" class="search-table-wrap">
 
 <table>
 
@@ -903,7 +907,7 @@ No results
 <footer id="footerStatus">
   Production Monitor Dashboard · Live API data
 </footer>
-
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 <script>
  const PASSWORD = "8888";
 
@@ -1891,6 +1895,42 @@ function initChartTooltip(points){
             },1200);
 
         });
+
+    });
+
+}
+function downloadResultImage(){
+
+    const target = document.getElementById("captureArea");
+
+    // จำค่าเดิม
+    const oldOverflow = target.style.overflow;
+    const oldWidth = target.style.width;
+
+    // ขยายตารางก่อนแคป
+    target.style.overflow = "visible";
+    target.style.width = target.scrollWidth + "px";
+
+    html2canvas(target,{
+        backgroundColor:"#ffffff",
+        scale:2,
+        useCORS:true
+    }).then(canvas=>{
+
+        // คืนค่าเดิม
+        target.style.overflow = oldOverflow;
+        target.style.width = oldWidth;
+
+        const link = document.createElement("a");
+
+        const orderNo =
+            document.getElementById("searchOrderNo").value || "Order";
+
+        link.download = orderNo + ".png";
+
+        link.href = canvas.toDataURL("image/png");
+
+        link.click();
 
     });
 
