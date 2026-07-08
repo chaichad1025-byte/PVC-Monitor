@@ -443,9 +443,16 @@ footer {
     display:flex;
     gap:12px;
     margin-bottom:20px;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+}
+
+.search-bar > *{
+    flex-shrink:0;
 }
 
 .search-bar input{
+    min-width:220px;
     flex:1;
     background:#ffffff;
     color:#1f2937;
@@ -469,6 +476,9 @@ footer {
 }
 .search-bar button:hover{
     background:#1d4ed8;
+}
+.search-bar button{
+    min-width:140px;
 }
 .search-table-wrap table{
     width:100%;
