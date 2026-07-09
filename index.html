@@ -611,6 +611,10 @@ footer {
 
     z-index:999999;
 }
+#activeRemark{
+    color:#b91c1c;
+    font-weight:400;
+}
 </style>
 </head>
 <body>
@@ -757,10 +761,28 @@ footer {
 
         <!-- TROUBLE TIMER -->
         <div class="breakdown-note" id="activeTroubleBox" style="display:none">
-          <div><strong>สถานะ:</strong> <span id="activeIssueStatus">—</span></div>
-          <div>เวลาเริ่มขัดข้อง: <span id="activeTroubleStart">—</span></div>
-          <div>เวลาขัดข้องรวม: <span id="activeTroubleTotal">—</span></div>
-        </div>
+
+    <div>
+        <strong>สถานะ :</strong>
+        <span id="activeIssueStatus">—</span>
+    </div>
+
+    <div>
+        <strong>หมายเหตุ :</strong>
+        <span id="activeRemark">—</span>
+    </div>
+
+    <div>
+        เวลาเริ่มขัดข้อง :
+        <span id="activeTroubleStart">—</span>
+    </div>
+
+    <div>
+        เวลาขัดข้องรวม :
+        <span id="activeTroubleTotal">—</span>
+    </div>
+
+</div>
       </div>
     </div>
 
@@ -1267,6 +1289,7 @@ function renderTroubleBox(order){
   const show = !!order && (isIssue(order) || clean(order.troubleTime) !== "—" || clean(order.troubleStart) !== "—");
   box.style.display = show ? "block" : "none";
   text("activeIssueStatus", order?.status);
+  text("activeRemark", order?.remark);
   text("activeTroubleStart", order?.troubleStart ? formatDate(order.troubleStart) : "—");
   text("activeTroubleTotal", formatDuration(troubleMs(order)));
 }
