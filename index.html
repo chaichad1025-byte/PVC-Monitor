@@ -894,10 +894,22 @@ footer {
 
 <div class="search-bar">
 
+<select id="searchType">
+
+    <option value="orderNo">
+        ใบสั่งออเดอร์
+    </option>
+
+    <option value="workNo">
+        ใบสั่งงาน
+    </option>
+
+</select>
+
 <input
-id="searchOrderNo"
+id="searchKeyword"
 type="text"
-placeholder="Enter Order No">
+placeholder="Enter Number">
 
 <button onclick="searchFinishedOrder()">
 Search
@@ -1785,19 +1797,29 @@ const payload = await response.json();
 }
 function searchFinishedOrder(){
 
-  const orderNo = $("searchOrderNo").value.trim();
+  const searchType = $("searchType").value;
+
+  const keyword = $("searchKeyword").value.trim();
 
   const body = $("searchResultBody");
 
-  if(!orderNo){
+  if(!keyword){
     body.innerHTML =
-      `<tr><td colspan="4">Enter Order No</td></tr>`;
+    `<tr><td colspan="23">Enter Number</td></tr>`;
     return;
   }
 
-  const result = finishRows.filter(
-    row => String(row.orderNo).trim() === orderNo
-  );
+  const result = finishRows.filter(row => {
+
+    if(searchType === "orderNo"){
+
+        return String(row.orderNo).trim() === keyword;
+
+    }
+
+    return String(row.workNo).trim() === keyword;
+
+});
   let totalLength = 0;
   let totalOrder = 0;
   let totalPowder = 0;
@@ -1816,7 +1838,7 @@ result.forEach(row => {
 
   if(result.length === 0){
     body.innerHTML =
-      `<tr><td colspan="4">No results</td></tr>`;
+    `<tr><td colspan="23">No results</td></tr>`;
     return;
   }
 
@@ -2004,10 +2026,10 @@ function downloadResultImage(){
 
         const link = document.createElement("a");
 
-        const orderNo =
-            document.getElementById("searchOrderNo").value || "Order";
+        const keyword =
+        document.getElementById("searchKeyword").value || "Search";
 
-        link.download = orderNo + ".png";
+        link.download = keyword + ".png";
 
         link.href = canvas.toDataURL("image/png");
 
