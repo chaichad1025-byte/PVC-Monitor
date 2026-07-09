@@ -2026,10 +2026,32 @@ function downloadResultImage(){
 
         const link = document.createElement("a");
 
-        const keyword =
-        document.getElementById("searchKeyword").value || "Search";
+        const keyword = document.getElementById("searchKeyword").value.trim();
+const searchType = document.getElementById("searchType").value;
 
-        link.download = keyword + ".png";
+// วันที่ปัจจุบัน
+const today = new Date();
+
+const thaiMonths = [
+  "ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.",
+  "ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."
+];
+
+const day = String(today.getDate()).padStart(2, "0");
+const month = thaiMonths[today.getMonth()];
+const year = today.getFullYear();
+
+const dateText = `${day}-${month}-${year}`;
+
+let fileName = "";
+
+if (searchType === "orderNo") {
+    fileName = `ใบสั่งออเดอร์ (${keyword}) ${dateText}.png`;
+} else {
+    fileName = `ใบสั่งงาน (${keyword}) ${dateText}.png`;
+}
+
+link.download = fileName;
 
         link.href = canvas.toDataURL("image/png");
 
