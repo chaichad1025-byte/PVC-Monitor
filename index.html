@@ -998,6 +998,8 @@ const LATEST_FINISHED_KEY = "pvcDashboard.latestFinishedOrder";
 let activeOrder = null;
 let finishRows = [];
 
+let isLoading = false;
+
 function $(id){ return document.getElementById(id); }
 function text(id, value){ const el = $(id); if(el) el.textContent = clean(value); }
 function clean(value){ return value === undefined || value === null || value === "" ? "—" : String(value); }
@@ -1728,10 +1730,29 @@ function updateClock(){
   text("clock", new Date().toLocaleTimeString("th-TH", { hour12:false }));
 }
 async function loadData(){
+    if(isLoading) return;
+
+  isLoading = true;
+
   try{
-    const response = await fetch(API_URL, { cache: "no-store" });
-    if(!response.ok) throw new Error(`HTTP ${response.status}`);
-    const payload = await response.json();                 
+    const controller = new AbortController();
+
+const timeout = setTimeout(() => {
+    controller.abort();
+}, 8000);
+
+const response = await fetch(API_URL, {
+    cache: "no-store",
+    signal: controller.signal
+});
+
+clearTimeout(timeout);
+
+if(!response.ok){
+    throw new Error(`HTTP ${response.status}`);
+}
+
+const payload = await response.json();                
     const rows = normalizeRows(payload.data);
     finishRows = normalizeRows(payload.finish);
     renderOutputChart();
@@ -1750,12 +1771,16 @@ async function loadData(){
     text("dataStatus", `Live data loaded · ${rows.length} rows · ${new Date().toLocaleString("th-TH")}`);
     text("footerStatus", `Production Monitor Dashboard · Live API data · Updated ${new Date().toLocaleString("th-TH")}`);
   } catch(error){
+
     console.error(error);
-    text("dataStatus", `Unable to load API data: ${error.message}`);
-    text("footerStatus", `Production Monitor Dashboard · API load error · ${new Date().toLocaleString("th-TH")}`);
-    renderActive(null);
-    renderTable([]);
-    renderOutputChart([]);
+
+    text("dataStatus", "กำลังเชื่อมต่อใหม่...");
+    text("footerStatus", `Production Monitor Dashboard · Reconnecting... · ${new Date().toLocaleString("th-TH")}`);
+
+  } finally{
+
+    isLoading = false;
+
   }
 }
 function searchFinishedOrder(){
