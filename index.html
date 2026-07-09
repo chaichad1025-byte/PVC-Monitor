@@ -615,6 +615,24 @@ footer {
     color:#b91c1c;
     font-weight:400;
 }
+.date-toolbar{
+
+display:flex;
+
+align-items:flex-end;
+
+gap:14px;
+
+flex-wrap:wrap;
+
+}
+.date-field{
+
+display:flex;
+
+flex-direction:column;
+
+}
 </style>
 </head>
 <body>
@@ -968,7 +986,127 @@ No results
 </div>
 
 </section>
+<section class="search-card">
 
+<h2>⚠️ Trouble History</h2>
+
+<div class="date-toolbar">
+
+<div class="date-field">
+
+<label for="troubleFrom">จากวันที่</label>
+
+<input
+type="date"
+id="troubleFrom">
+
+</div>
+
+<div class="date-field">
+
+<label for="troubleTo">ถึงวันที่</label>
+
+<input
+type="date"
+id="troubleTo">
+
+</div>
+
+<div class="view-toggle">
+
+<button
+type="button"
+class="view-btn"
+id="troubleToday">
+
+Today
+
+</button>
+
+<button
+type="button"
+class="view-btn"
+id="troubleWeek">
+
+This Week
+
+</button>
+
+<button
+type="button"
+class="view-btn"
+id="troubleMonth">
+
+This Month
+
+</button>
+
+</div>
+
+<button
+class="toolbar-btn"
+onclick="searchTroubleHistory()">
+
+Search
+
+</button>
+
+<button
+class="toolbar-btn"
+id="saveTroubleBtn"
+onclick="downloadTroubleImage()">
+
+📷 Save Image
+
+</button>
+
+</div>
+
+<div
+id="troubleCaptureArea"
+class="search-table-wrap">
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Start</th>
+<th>End</th>
+<th>Duration</th>
+<th>Status</th>
+<th>Remark</th>
+<th>Order No</th>
+<th>Work No</th>
+<th>Worker</th>
+<th>Customer</th>
+<th>Sheet Type</th>
+<th>Fabric</th>
+
+</tr>
+
+</thead>
+
+<tbody id="troubleResultBody">
+
+<tr>
+
+<td colspan="11">
+
+Select Date
+
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+</div>
+
+</section>
 <footer id="footerStatus">
   Production Monitor Dashboard · Live API data
 </footer>
@@ -1009,6 +1147,7 @@ const LAST_ACTIVE_KEY = "pvcDashboard.lastActiveOrder";
 const LATEST_FINISHED_KEY = "pvcDashboard.latestFinishedOrder";
 let activeOrder = null;
 let finishRows = [];
+let troubleRows = [];
 
 let isLoading = false;
 
@@ -1766,7 +1905,11 @@ if(!response.ok){
 
 const payload = await response.json();                
     const rows = normalizeRows(payload.data);
+
     finishRows = normalizeRows(payload.finish);
+
+    troubleRows = payload.trouble || [];
+
     renderOutputChart();
     console.log(payload);
     console.log(rows);
@@ -1949,6 +2092,134 @@ result.map(row => `
 </tr>
 `;
 }
+function searchTroubleHistory() {
+
+  const from = $("troubleFrom").value;
+  const to = $("troubleTo").value;
+  const body = $("troubleResultBody");
+
+  if (!from || !to) {
+    body.innerHTML = `
+      <tr>
+        <td colspan="11">Please select date range</td>
+      </tr>
+    `;
+    return;
+  }
+
+  const fromDate = new Date(from);
+  fromDate.setHours(0, 0, 0, 0);
+
+  const toDate = new Date(to);
+  toDate.setHours(23, 59, 59, 999);
+
+  const result = troubleRows.filter(row => {
+
+    if (!row.start) return false;
+
+    const d = new Date(row.start);
+
+    return d >= fromDate && d <= toDate;
+
+  });
+
+  if (result.length === 0) {
+
+    body.innerHTML = `
+      <tr>
+        <td colspan="11">No Trouble History</td>
+      </tr>
+    `;
+
+    return;
+
+  }
+
+  body.innerHTML = result.map(row => `
+
+<tr>
+
+<td>${formatDate(row.start)}</td>
+
+<td>${row.end ? formatDate(row.end) : "-"}</td>
+
+<td>${clean(row.duration)}</td>
+
+<td>${clean(row.status)}</td>
+
+<td>${clean(row.remark)}</td>
+
+<td>${clean(row.orderNo)}</td>
+
+<td>${clean(row.workNo)}</td>
+
+<td>${clean(row.worker)}</td>
+
+<td>${clean(row.customer)}</td>
+
+<td>${clean(row.sheetType)}</td>
+
+<td>${clean(row.fabric)}</td>
+
+</tr>
+
+`).join("");
+
+}function setTodayTrouble(){
+
+  const today = new Date();
+
+  const value = today.toISOString().split("T")[0];
+
+  $("troubleFrom").value = value;
+
+  $("troubleTo").value = value;
+
+  searchTroubleHistory();
+
+}
+function setWeekTrouble(){
+
+  const today = new Date();
+
+  const day = today.getDay();
+
+  const monday = new Date(today);
+
+  monday.setDate(today.getDate() - ((day + 6) % 7));
+
+  const sunday = new Date(monday);
+
+  sunday.setDate(monday.getDate() + 6);
+
+  $("troubleFrom").value =
+    monday.toISOString().split("T")[0];
+
+  $("troubleTo").value =
+    sunday.toISOString().split("T")[0];
+
+  searchTroubleHistory();
+
+}
+function setMonthTrouble(){
+
+  const today = new Date();
+
+  const first =
+    new Date(today.getFullYear(), today.getMonth(), 1);
+
+  const last =
+    new Date(today.getFullYear(), today.getMonth()+1, 0);
+
+  $("troubleFrom").value =
+    first.toISOString().split("T")[0];
+
+  $("troubleTo").value =
+    last.toISOString().split("T")[0];
+
+  searchTroubleHistory();
+
+}
 function initChartTooltip(points){
 
     const tooltip = document.getElementById("chartTooltip");
@@ -2089,8 +2360,16 @@ document.getElementById("saveGraph").addEventListener("click", () => {
 
 });
 attachOutputControls();
+
+$("troubleToday").addEventListener("click", setTodayTrouble);
+
+$("troubleWeek").addEventListener("click", setWeekTrouble);
+
+$("troubleMonth").addEventListener("click", setMonthTrouble);
+
 updateClock();
 loadData();
+
 setInterval(updateClock, 1000);
 setInterval(updateTimers, 1000);
 setInterval(loadData, 30000);
