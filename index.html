@@ -452,7 +452,31 @@ footer {
 .search-bar > *{
     flex-shrink:0;
 }
+.finish-date-bar{
 
+    display:flex;
+    align-items:center;
+    gap:10px;
+
+    margin-top:12px;
+    margin-bottom:18px;
+
+    flex-wrap:wrap;
+
+}
+
+.finish-date-bar input{
+
+    width:170px;
+    height:42px;
+
+}
+
+.finish-date-bar button{
+
+    height:42px;
+
+}
 .search-bar input{
     min-width:220px;
     flex:1;
@@ -482,6 +506,7 @@ footer {
 .search-bar button{
     min-width:140px;
 }
+
 .search-table-wrap table{
     width:100%;
     min-width:1200px;
@@ -938,7 +963,50 @@ Search
 </button>
 
 </div>
+<div class="date-toolbar" style="margin-top:16px;">
 
+    <div class="date-field">
+        <label>จากวันที่</label>
+        <input type="date" id="finishFrom">
+    </div>
+
+    <div class="date-field">
+        <label>ถึงวันที่</label>
+        <input type="date" id="finishTo">
+    </div>
+
+    <div class="view-toggle">
+
+        <button
+            type="button"
+            class="view-btn"
+            onclick="setFinishToday()">
+            Today
+        </button>
+
+        <button
+            type="button"
+            class="view-btn"
+            onclick="setFinishWeek()">
+            This Week
+        </button>
+
+        <button
+            type="button"
+            class="view-btn"
+            onclick="setFinishMonth()">
+            This Month
+        </button>
+
+    </div>
+
+    <button
+        class="toolbar-btn"
+        onclick="searchFinishedByDate()">
+        Search
+    </button>
+
+</div>
 <div id="captureArea" class="search-table-wrap">
 
 <table>
@@ -987,6 +1055,7 @@ No results
 
 </section>
 <section class="search-card">
+  
 
 <h2>⚠️ Trouble History</h2>
 
@@ -1832,7 +1901,7 @@ function formatThaiFull(dateStr){
   return d.toLocaleDateString("th-TH", { day:"numeric", month:"short", year:"numeric" });
 }
 function attachOutputControls(){
-  const buttons = document.querySelectorAll(".view-btn");
+  const buttons = document.querySelectorAll(".view-btn[data-view]");
   buttons.forEach(btn => {
     btn.addEventListener("click", () => {
       buttons.forEach(b => b.classList.remove("active"));
@@ -2092,6 +2161,242 @@ result.map(row => `
 </tr>
 `;
 }
+function searchFinishedByDate(){
+
+    const from = $("finishFrom").value;
+    const to   = $("finishTo").value;
+
+    const body = $("searchResultBody");
+
+    if(!from || !to){
+
+        body.innerHTML = `
+        <tr>
+            <td colspan="23">Please select date range</td>
+        </tr>`;
+        return;
+
+    }
+
+    const fromDate = new Date(from);
+    fromDate.setHours(0,0,0,0);
+
+    const toDate = new Date(to);
+    toDate.setHours(23,59,59,999);
+
+    const result = finishRows.filter(row=>{
+
+        if(!row.finishDate) return false;
+
+        const d = new Date(row.finishDate);
+
+        return d >= fromDate && d <= toDate;
+
+    });
+
+    if(result.length===0){
+
+        body.innerHTML=`
+        <tr>
+            <td colspan="23">No Results</td>
+        </tr>`;
+        return;
+
+    }
+
+    let totalLength=0;
+    let totalOrder=0;
+    let totalPowder=0;
+    let totalScarp=0;
+    let totalLump=0;
+
+    result.forEach(row=>{
+
+        totalLength+=Number(row.length)||0;
+        totalOrder+=Number(row.orderKg)||0;
+        totalPowder+=Number(row.powderKg)||0;
+        totalScarp+=Number(row.scarpKg)||0;
+        totalLump+=Number(row.lump)||0;
+
+    });
+
+    body.innerHTML =
+    result.map(row=>`
+
+<tr>
+
+<td>${clean(row.workNo)}</td>
+
+<td>${clean(row.customer)}</td>
+
+<td>${clean(row.sheetType)}</td>
+
+<td>${clean(row.fabric)}</td>
+
+<td>${clean(row.color)}</td>
+
+<td>${clean(row.thickness)}</td>
+
+<td>${clean(row.width)}</td>
+
+<td>${clean(row.gsm)}</td>
+
+<td>${lengthText(row)}</td>
+
+<td>${clean(row.speed)}</td>
+
+<td>${clean(row.orderKg)}</td>
+
+<td>${clean(row.powderKg)}</td>
+
+<td>${clean(row.scarpKg)}</td>
+
+<td>${clean(row.lump)}</td>
+
+<td>${clean(row.powderRate)}</td>
+
+<td>${clean(row.scarpRate)}</td>
+
+<td>${forecastText(row)}</td>
+
+<td>${clean(row.actualTime)}</td>
+
+<td>${clean(row.troubleTime)}</td>
+
+<td>${formatDate(row.startDate)}</td>
+
+<td>${formatDate(row.finishDate)}</td>
+
+<td>${clean(row.worker)}</td>
+
+<td>${clean(row.remark)}</td>
+
+</tr>
+
+`).join("")
+
++
+
+`
+
+<tr style="font-weight:bold;background:#f3f4f6;">
+
+<td>TOTAL</td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td>${totalLength.toLocaleString()}</td>
+
+<td></td>
+
+<td>${totalOrder.toLocaleString()}</td>
+
+<td>${totalPowder.toLocaleString()}</td>
+
+<td>${totalScarp.toLocaleString()}</td>
+
+<td>${totalLump.toLocaleString()}</td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+</tr>
+
+`;
+
+}
+function setFinishToday(){
+
+    const today = new Date();
+    const value = today.toISOString().split("T")[0];
+
+    $("finishFrom").value = value;
+    $("finishTo").value = value;
+
+    searchFinishedByDate();
+
+}
+
+function setFinishWeek(){
+
+    const today = new Date();
+
+    const day = today.getDay();
+
+    const monday = new Date(today);
+
+    monday.setDate(
+        today.getDate() - ((day + 6) % 7)
+    );
+
+    const sunday = new Date(monday);
+
+    sunday.setDate(
+        monday.getDate() + 6
+    );
+
+    $("finishFrom").value =
+        monday.toISOString().split("T")[0];
+
+    $("finishTo").value =
+        sunday.toISOString().split("T")[0];
+
+    searchFinishedByDate();
+
+}
+
+function setFinishMonth(){
+
+    const today = new Date();
+
+    const first = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        1
+    );
+
+    const last = new Date(
+        today.getFullYear(),
+        today.getMonth() + 1,
+        0
+    );
+
+    $("finishFrom").value =
+        first.toISOString().split("T")[0];
+
+    $("finishTo").value =
+        last.toISOString().split("T")[0];
+
+    searchFinishedByDate();
+
+}
 function searchTroubleHistory() {
 
   const from = $("troubleFrom").value;
@@ -2166,6 +2471,7 @@ function searchTroubleHistory() {
 `).join("");
 
 }function setTodayTrouble(){
+  troubleSearchMode = "today";
 
   const today = new Date();
 
@@ -2179,6 +2485,7 @@ function searchTroubleHistory() {
 
 }
 function setWeekTrouble(){
+  troubleSearchMode = "week";
 
   const today = new Date();
 
@@ -2202,6 +2509,7 @@ function setWeekTrouble(){
 
 }
 function setMonthTrouble(){
+  troubleSearchMode = "month";
 
   const today = new Date();
 
@@ -2277,11 +2585,9 @@ function downloadResultImage(){
 
     const target = document.getElementById("captureArea");
 
-    // จำค่าเดิม
     const oldOverflow = target.style.overflow;
     const oldWidth = target.style.width;
 
-    // ขยายตารางก่อนแคป
     target.style.overflow = "visible";
     target.style.width = target.scrollWidth + "px";
 
@@ -2291,39 +2597,233 @@ function downloadResultImage(){
         useCORS:true
     }).then(canvas=>{
 
-        // คืนค่าเดิม
         target.style.overflow = oldOverflow;
         target.style.width = oldWidth;
 
         const link = document.createElement("a");
 
-        const keyword = document.getElementById("searchKeyword").value.trim();
-const searchType = document.getElementById("searchType").value;
+        const keyword =
+            document.getElementById("searchKeyword").value.trim();
 
-// วันที่ปัจจุบัน
-const today = new Date();
+        const searchType =
+            document.getElementById("searchType").value;
 
-const thaiMonths = [
-  "ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.",
-  "ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."
-];
+        const from =
+            document.getElementById("finishFrom").value;
 
-const day = String(today.getDate()).padStart(2, "0");
-const month = thaiMonths[today.getMonth()];
-const year = today.getFullYear();
+        const to =
+            document.getElementById("finishTo").value;
 
-const dateText = `${day}-${month}-${year}`;
+        const thaiMonths = [
+            "ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.",
+            "ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."
+        ];
 
-let fileName = "";
+        function thaiDate(value){
 
-if (searchType === "orderNo") {
-    fileName = `ใบสั่งออเดอร์ (${keyword}) ${dateText}.png`;
-} else {
-    fileName = `ใบสั่งงาน (${keyword}) ${dateText}.png`;
+            const parts = value.split("-");
+
+            const year = Number(parts[0]) + 543;
+            const month = thaiMonths[Number(parts[1]) - 1];
+            const day = Number(parts[2]);
+
+            return `${day} ${month} ${year}`;
+
+        }
+
+        const today = new Date();
+
+        const day =
+            String(today.getDate()).padStart(2,"0");
+
+        const month =
+            thaiMonths[today.getMonth()];
+
+        const year =
+            today.getFullYear();
+
+        const dateText =
+            `${day}-${month}-${year}`;
+
+        let fileName = "";
+
+        // ถ้ามีเลขค้นหา ให้ใช้ชื่อใบสั่งก่อน
+        if(keyword){
+
+            if(searchType === "orderNo"){
+
+                fileName =
+                    `ใบสั่งออเดอร์ (${keyword}) ${dateText}.png`;
+
+            }else{
+
+                fileName =
+                    `ใบสั่งงาน (${keyword}) ${dateText}.png`;
+
+            }
+
+        }
+
+        // ค้นหาตามวันที่
+        else if(from && to){
+
+            const fromDate = new Date(from + "T00:00:00");
+            const toDate = new Date(to + "T00:00:00");
+
+            if(from === to){
+
+                fileName =
+                    `รายการผลิต ${thaiDate(from)}.png`;
+
+            }
+
+            else if(
+                fromDate.getDate() === 1 &&
+                toDate.getDate() ===
+                new Date(
+                    toDate.getFullYear(),
+                    toDate.getMonth() + 1,
+                    0
+                ).getDate() &&
+                fromDate.getMonth() === toDate.getMonth() &&
+                fromDate.getFullYear() === toDate.getFullYear()
+            ){
+
+                const monthName =
+                    thaiMonths[fromDate.getMonth()];
+
+                const thaiYear =
+                    fromDate.getFullYear() + 543;
+
+                fileName =
+                    `รายการผลิต เดือน ${monthName} ${thaiYear}.png`;
+
+            }
+
+            else{
+
+                fileName =
+                    `รายการผลิต ${thaiDate(from)} ถึง ${thaiDate(to)}.png`;
+
+            }
+
+        }
+
+        else{
+
+            fileName =
+                `รายการผลิต ${dateText}.png`;
+
+        }
+
+        link.download = fileName;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+
+    });
+
 }
+let troubleSearchMode = "custom";
 
-link.download = fileName;
+function downloadTroubleImage(){
 
+    const target =
+        document.getElementById("troubleCaptureArea");
+
+    const from =
+        document.getElementById("troubleFrom").value;
+
+    const to =
+        document.getElementById("troubleTo").value;
+
+    if(!from || !to){
+
+        alert("กรุณาเลือกช่วงวันที่ก่อน");
+        return;
+
+    }
+
+    const oldOverflow = target.style.overflow;
+    const oldWidth = target.style.width;
+
+    target.style.overflow = "visible";
+    target.style.width = target.scrollWidth + "px";
+
+    html2canvas(target,{
+        backgroundColor:"#ffffff",
+        scale:2,
+        useCORS:true
+    }).then(canvas=>{
+
+        target.style.overflow = oldOverflow;
+        target.style.width = oldWidth;
+
+        const thaiMonths = [
+            "ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.",
+            "ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."
+        ];
+
+        function thaiDate(value){
+
+            const parts = value.split("-");
+
+            const year = Number(parts[0]) + 543;
+            const month = thaiMonths[Number(parts[1]) - 1];
+            const day = Number(parts[2]);
+
+            return `${day} ${month} ${year}`;
+
+        }
+
+        const fromDate =
+            new Date(from + "T00:00:00");
+
+        let fileName = "";
+
+        if(troubleSearchMode === "today"){
+
+            fileName =
+                `ประวัติปัญหาขัดข้อง ${thaiDate(from)}.png`;
+
+        }
+
+        else if(troubleSearchMode === "week"){
+
+            fileName =
+                `ประวัติปัญหาขัดข้อง สัปดาห์ ${thaiDate(from)} ถึง ${thaiDate(to)}.png`;
+
+        }
+
+        else if(troubleSearchMode === "month"){
+
+            const monthName =
+                thaiMonths[fromDate.getMonth()];
+
+            const thaiYear =
+                fromDate.getFullYear() + 543;
+
+            fileName =
+                `ประวัติปัญหาขัดข้อง เดือน ${monthName} ${thaiYear}.png`;
+
+        }
+
+        else if(from === to){
+
+            fileName =
+                `ประวัติปัญหาขัดข้อง ${thaiDate(from)}.png`;
+
+        }
+
+        else{
+
+            fileName =
+                `ประวัติปัญหาขัดข้อง ${thaiDate(from)} ถึง ${thaiDate(to)}.png`;
+
+        }
+
+        const link = document.createElement("a");
+
+        link.download = fileName;
         link.href = canvas.toDataURL("image/png");
 
         link.click();
@@ -2366,6 +2866,13 @@ $("troubleToday").addEventListener("click", setTodayTrouble);
 $("troubleWeek").addEventListener("click", setWeekTrouble);
 
 $("troubleMonth").addEventListener("click", setMonthTrouble);
+$("troubleFrom").addEventListener("change", () => {
+    troubleSearchMode = "custom";
+});
+
+$("troubleTo").addEventListener("change", () => {
+    troubleSearchMode = "custom";
+});
 
 updateClock();
 loadData();
