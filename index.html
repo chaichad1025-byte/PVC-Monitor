@@ -1013,6 +1013,7 @@ Search
 
 <thead>
 <tr>
+<th>ORDER NO</th>
 <th>WORK NO</th>
 <th>CUSTOMER</th>
 <th>SHEET TYPE</th>
@@ -1042,7 +1043,7 @@ Search
 <tbody id="searchResultBody">
 
 <tr>
-<td colspan="21">
+<td colspan="24">
 No results
 </td>
 </tr>
@@ -2017,7 +2018,7 @@ function searchFinishedOrder(){
 
   if(!keyword){
     body.innerHTML =
-    `<tr><td colspan="23">Enter Number</td></tr>`;
+    `<tr><td colspan="24">Enter Number</td></tr>`;
     return;
   }
 
@@ -2050,13 +2051,15 @@ result.forEach(row => {
 
   if(result.length === 0){
     body.innerHTML =
-    `<tr><td colspan="23">No results</td></tr>`;
+    `<tr><td colspan="24">No results</td></tr>`;
     return;
   }
 
  body.innerHTML =
 result.map(row => `
 <tr>
+
+<td class="mono">${clean(row.orderNo)}</td>
 
 <td class="mono">${clean(row.workNo)}</td>
 
@@ -2128,6 +2131,8 @@ result.map(row => `
 
 <td></td>
 
+<td></td>
+
 <td>${totalLength.toLocaleString()}</td>
 
 <td></td>
@@ -2172,7 +2177,7 @@ function searchFinishedByDate(){
 
         body.innerHTML = `
         <tr>
-            <td colspan="23">Please select date range</td>
+            <td colspan="24">Please select date range</td>
         </tr>`;
         return;
 
@@ -2198,7 +2203,7 @@ function searchFinishedByDate(){
 
         body.innerHTML=`
         <tr>
-            <td colspan="23">No Results</td>
+            <td colspan="24">No Results</td>
         </tr>`;
         return;
 
@@ -2224,6 +2229,7 @@ function searchFinishedByDate(){
     result.map(row=>`
 
 <tr>
+<td>${clean(row.orderNo)}</td>
 
 <td>${clean(row.workNo)}</td>
 
@@ -2282,6 +2288,8 @@ function searchFinishedByDate(){
 <tr style="font-weight:bold;background:#f3f4f6;">
 
 <td>TOTAL</td>
+
+<td></td>
 
 <td></td>
 
