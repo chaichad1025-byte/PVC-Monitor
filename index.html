@@ -978,25 +978,28 @@ Search
     <div class="view-toggle">
 
         <button
-            type="button"
-            class="view-btn"
-            onclick="setFinishToday()">
-            Today
-        </button>
+    type="button"
+    class="view-btn"
+    id="finishToday"
+    onclick="setFinishToday()">
+    Today
+</button>
 
-        <button
-            type="button"
-            class="view-btn"
-            onclick="setFinishWeek()">
-            This Week
-        </button>
+<button
+    type="button"
+    class="view-btn"
+    id="finishWeek"
+    onclick="setFinishWeek()">
+    This Week
+</button>
 
-        <button
-            type="button"
-            class="view-btn"
-            onclick="setFinishMonth()">
-            This Month
-        </button>
+<button
+    type="button"
+    class="view-btn"
+    id="finishMonth"
+    onclick="setFinishMonth()">
+    This Month
+</button>
 
     </div>
 
@@ -2340,7 +2343,29 @@ function searchFinishedByDate(){
 `;
 
 }
+function setFinishActive(buttonId){
+
+    ["finishToday", "finishWeek", "finishMonth"]
+    .forEach(id => {
+
+        const btn = $(id);
+
+        if(btn){
+            btn.classList.remove("active");
+        }
+
+    });
+
+    const activeBtn = $(buttonId);
+
+    if(activeBtn){
+        activeBtn.classList.add("active");
+    }
+
+}
 function setFinishToday(){
+
+    setFinishActive("finishToday");
 
     const today = new Date();
     const value = today.toISOString().split("T")[0];
@@ -2353,6 +2378,8 @@ function setFinishToday(){
 }
 
 function setFinishWeek(){
+
+    setFinishActive("finishWeek");
 
     const today = new Date();
 
@@ -2381,6 +2408,8 @@ function setFinishWeek(){
 }
 
 function setFinishMonth(){
+
+    setFinishActive("finishMonth");
 
     const today = new Date();
 
@@ -2478,7 +2507,29 @@ function searchTroubleHistory() {
 
 `).join("");
 
-}function setTodayTrouble(){
+}
+function setTroubleActive(buttonId){
+
+    ["troubleToday", "troubleWeek", "troubleMonth"]
+    .forEach(id => {
+
+        const btn = $(id);
+
+        if(btn){
+            btn.classList.remove("active");
+        }
+
+    });
+
+    const activeBtn = $(buttonId);
+
+    if(activeBtn){
+        activeBtn.classList.add("active");
+    }
+
+}
+function setTodayTrouble(){
+  setTroubleActive("troubleToday");
   troubleSearchMode = "today";
 
   const today = new Date();
@@ -2493,6 +2544,7 @@ function searchTroubleHistory() {
 
 }
 function setWeekTrouble(){
+  setTroubleActive("troubleWeek");
   troubleSearchMode = "week";
 
   const today = new Date();
@@ -2517,6 +2569,7 @@ function setWeekTrouble(){
 
 }
 function setMonthTrouble(){
+  setTroubleActive("troubleMonth");
   troubleSearchMode = "month";
 
   const today = new Date();
