@@ -2172,8 +2172,7 @@ result.map(row => `
 function searchFinishedByDate(){
 
     const from = $("finishFrom").value;
-    const to   = $("finishTo").value;
-
+    const to = $("finishTo").value;
     const body = $("searchResultBody");
 
     if(!from || !to){
@@ -2182,56 +2181,71 @@ function searchFinishedByDate(){
         <tr>
             <td colspan="24">Please select date range</td>
         </tr>`;
-        return;
 
+        return;
     }
 
-    const fromDate = new Date(from);
-    fromDate.setHours(0,0,0,0);
+    // เริ่มวันผลิต 08:00 ของวันที่เลือก
+    const fromDate = new Date(from + "T08:00:00");
 
-    const toDate = new Date(to);
-    toDate.setHours(23,59,59,999);
+    // สิ้นสุดที่ 08:00 ของวันถัดจาก "ถึงวันที่"
+    const toDate = new Date(to + "T08:00:00");
+    toDate.setDate(toDate.getDate() + 1);
 
-    const result = finishRows.filter(row=>{
+    const result = finishRows.filter(row => {
 
-        if(!row.finishDate) return false;
+        // ยึดตามวันเวลาเริ่มผลิต
+        if(!row.startDate) return false;
 
-        const d = new Date(row.finishDate);
+        const d = new Date(row.startDate);
 
-        return d >= fromDate && d <= toDate;
+        if(isNaN(d.getTime())) return false;
+
+        return d >= fromDate && d < toDate;
 
     });
 
-    if(result.length===0){
+    if(result.length === 0){
 
-        body.innerHTML=`
+        body.innerHTML = `
         <tr>
             <td colspan="24">No Results</td>
         </tr>`;
-        return;
 
+        return;
     }
 
-    let totalLength=0;
-    let totalOrder=0;
-    let totalPowder=0;
-    let totalScarp=0;
-    let totalLump=0;
+    // เรียงงานที่เสร็จล่าสุดไว้บนสุด
+    result.sort((a, b) => {
 
-    result.forEach(row=>{
+    const dateA = parseDate(a.finishDate);
+    const dateB = parseDate(b.finishDate);
 
-        totalLength+=Number(row.length)||0;
-        totalOrder+=Number(row.orderKg)||0;
-        totalPowder+=Number(row.powderKg)||0;
-        totalScarp+=Number(row.scarpKg)||0;
-        totalLump+=Number(row.lump)||0;
+    return dateB - dateA;
+
+    });
+
+    let totalLength = 0;
+    let totalOrder = 0;
+    let totalPowder = 0;
+    let totalScarp = 0;
+    let totalLump = 0;
+
+    result.forEach(row => {
+
+        totalLength += Number(row.length) || 0;
+        totalOrder += Number(row.orderKg) || 0;
+        totalPowder += Number(row.powderKg) || 0;
+        totalScarp += Number(row.scarpKg) || 0;
+        totalLump += Number(row.lump) || 0;
 
     });
 
     body.innerHTML =
-    result.map(row=>`
+    result.map(row => `
 
 <tr>
+
 <td>${clean(row.orderNo)}</td>
 
 <td>${clean(row.workNo)}</td>
