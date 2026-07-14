@@ -834,7 +834,7 @@ flex-direction:column;
       <div class="card-head" style="flex-direction:column; align-items:stretch; gap:14px">
         <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px">
           <div>
-            <div class="card-title">📈 Production Output</div>
+            <div class="card-title">Actual Production Output</div>
             <span class="q-count" id="outputCount">—</span>
           </div>
           <div class="view-toggle">
@@ -1692,7 +1692,7 @@ function groupByPeriod(rows, mode, fromDate, toDate){
       label = formatShortDate(sortDate);
     }
     const entry = map.get(key) || { length:0, count:0, sortDate, label };
-    entry.length += numberValue(order.length);
+    entry.length += numberValue(order.realLength);
     entry.count += 1;
     map.set(key, entry);
   });
@@ -2650,7 +2650,7 @@ function initChartTooltip(points){
 
             tooltip.innerHTML = `
                 <b>${p.label}</b><br>
-                ความยาว : ${formatNumber(p.length)} หลา
+                ความยาวผลิตจริง : ${formatNumber(p.length)} หลา
             `;
 
             tooltip.style.display = "block";
