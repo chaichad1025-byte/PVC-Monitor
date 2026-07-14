@@ -734,9 +734,9 @@ flex-direction:column;
   </div>
   <div class="kpi g">
     <div class="kpi-icon">✅</div>
-    <div class="kpi-lbl">Latest Finished Length</div>
+    <div class="kpi-lbl">Actual / Planned Length</div>
     <div class="kpi-val" id="kpiLatestFinished">—</div>
-    <div class="kpi-unit">length · latest finished order</div>
+    <div class="kpi-unit">actual production / planned length</div>
   </div>
 </div>
 
@@ -1487,7 +1487,12 @@ function renderKpis(rows, latestFinished){
   text("kpiRunning", running);
   text("kpiWaiting", waiting);
   text("kpiTotalLength", formatNumber(totalLength));
-  text("kpiLatestFinished", latestFinished ? formatNumber(latestFinished.length) : "0");
+  text(
+  "kpiLatestFinished",
+  latestFinished
+    ? `${formatNumber(latestFinished.realLength)} / ${formatNumber(latestFinished.length)}`
+    : "0 / 0"
+);
   text("queueCount", `${running} running · ${waiting} waiting · total ${formatNumber(totalLength)} length`);
 }
 function renderActive(order){
