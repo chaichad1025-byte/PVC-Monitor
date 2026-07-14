@@ -909,6 +909,7 @@ flex-direction:column;
         <div class="frow"><span class="fk">Width</span><span class="fv" id="finishWidth"></span></div>
         <div class="frow"><span class="fk">GSM</span><span class="fv" id="finishGsm"></span></div>
         <div class="frow"><span class="fk">Length</span><span class="fv mono" id="finishLength">—</span></div>
+        <div class="frow"><span class="fk">Real Length</span><span class="fv mono" id="finishRealLength">—</span></div>
         <div class="frow"><span class="fk">Speed</span><span class="fv mono" id="finishSpeed">—</span></div>
         <div class="frow"><span class="fk">Order (KG)</span><span class="fv mono" id="finishOrderKg">—</span></div>
         <div class="frow"><span class="fk">Powder (KG)</span><span class="fv mono" id="finishPowderKg">—</span></div>
@@ -1026,6 +1027,7 @@ Search
 <th>WIDTH</th>
 <th>GSM</th>
 <th>LENGTH</th>
+<th>REAL LENGTH</th>
 <th>SPEED</th>
 <th>ORDER (KG)</th>
 <th>POWDER (KG)</th>
@@ -1046,7 +1048,7 @@ Search
 <tbody id="searchResultBody">
 
 <tr>
-<td colspan="24">
+<td colspan="25">
 No results
 </td>
 </tr>
@@ -1277,6 +1279,8 @@ function normalizeRow(row, index){
   const speed = pick(row, ["speed"]);
   const length = pick(row, ["length"]);
   const unit = pick(row, ["unit"]);
+  const realLength = pick(row, ["realLength"]);
+  const realLengthUnit = pick(row, ["realLengthUnit"]);
   const forecast = pick(row, ["forecast"]);
 
   const startDate = pick(row, ["startDate"]);
@@ -1316,6 +1320,8 @@ function normalizeRow(row, index){
     speed,
     length,
     unit,
+    realLength,
+    realLengthUnit,
     forecast,
 
     startDate,
@@ -1544,9 +1550,17 @@ function renderLatestFinished(order){
   text("finishGsm", order?.gsm);
 
   text("finishLength", order ? lengthText(order) : "—");
+
   text(
-    "finishSpeed",
-    order ? withUnit(order.speed,"เมตร/นาที") : "—"
+  "finishRealLength",
+  order && order.realLength !== "" && order.realLength != null
+    ? `${Number(order.realLength).toLocaleString()} ${clean(order.realLengthUnit)}`
+    : "—"
+);
+
+  text(
+  "finishSpeed",
+  order ? withUnit(order.speed,"เมตร/นาที") : "—"
 );
   text("finishOrderKg", order?.orderKg);
 
@@ -2021,7 +2035,7 @@ function searchFinishedOrder(){
 
   if(!keyword){
     body.innerHTML =
-    `<tr><td colspan="24">Enter Number</td></tr>`;
+    `<tr><td colspan="25">Enter Number</td></tr>`;
     return;
   }
 
@@ -2054,7 +2068,7 @@ result.forEach(row => {
 
   if(result.length === 0){
     body.innerHTML =
-    `<tr><td colspan="24">No results</td></tr>`;
+    `<tr><td colspan="25">No results</td></tr>`;
     return;
   }
 
@@ -2081,6 +2095,12 @@ result.map(row => `
 <td>${clean(row.gsm)}</td>
 
 <td class="mono">${lengthText(row)}</td>
+
+<td class="mono">
+${row.realLength
+    ? formatNumber(row.realLength) + " " + clean(row.realLengthUnit)
+    : "—"}
+</td>
 
 <td>${clean(row.speed)}</td>
 
@@ -2179,7 +2199,7 @@ function searchFinishedByDate(){
 
         body.innerHTML = `
         <tr>
-            <td colspan="24">Please select date range</td>
+            <td colspan="25">Please select date range</td>
         </tr>`;
 
         return;
@@ -2209,7 +2229,7 @@ function searchFinishedByDate(){
 
         body.innerHTML = `
         <tr>
-            <td colspan="24">No Results</td>
+            <td colspan="25">No Results</td>
         </tr>`;
 
         return;
@@ -2265,6 +2285,12 @@ function searchFinishedByDate(){
 <td>${clean(row.gsm)}</td>
 
 <td>${lengthText(row)}</td>
+
+<td>
+${row.realLength
+    ? formatNumber(row.realLength) + " " + clean(row.realLengthUnit)
+    : "—"}
+</td>
 
 <td>${clean(row.speed)}</td>
 
@@ -2325,6 +2351,8 @@ function searchFinishedByDate(){
 <td>${totalLength.toLocaleString()}</td>
 
 <td></td>
+
+<td></td> <!-- SPEED -->
 
 <td>${totalOrder.toLocaleString()}</td>
 
