@@ -2246,6 +2246,7 @@ function searchFinishedByDate(){
     });
 
     let totalLength = 0;
+    let totalRealLength = 0;
     let totalOrder = 0;
     let totalPowder = 0;
     let totalScarp = 0;
@@ -2254,6 +2255,7 @@ function searchFinishedByDate(){
     result.forEach(row => {
 
         totalLength += Number(row.length) || 0;
+        totalRealLength += Number(row.realLength) || 0;
         totalOrder += Number(row.orderKg) || 0;
         totalPowder += Number(row.powderKg) || 0;
         totalScarp += Number(row.scarpKg) || 0;
@@ -2350,7 +2352,7 @@ ${row.realLength
 
 <td>${totalLength.toLocaleString()}</td>
 
-<td></td>
+<td>${totalRealLength.toLocaleString()}</td>
 
 <td></td> <!-- SPEED -->
 
