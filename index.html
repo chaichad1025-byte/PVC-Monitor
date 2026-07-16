@@ -732,6 +732,58 @@ flex-direction:column;
   line-height:1.65;
   pointer-events:none;
 }
+/* Output Chart Summary */
+.output-summary-grid{
+  display:grid;
+  grid-template-columns:repeat(4, minmax(0, 1fr));
+  gap:12px;
+  margin-bottom:14px;
+}
+
+.output-summary-card{
+  min-width:0;
+  padding:15px 16px;
+  background:#ffffff;
+  border:1px solid #dbe4ee;
+  border-radius:12px;
+  box-shadow:0 2px 8px rgba(15,39,70,.04);
+}
+
+.output-summary-label{
+  margin-bottom:7px;
+  color:#64748b;
+  font-size:12px;
+  font-weight:600;
+}
+
+.output-summary-value{
+  overflow:hidden;
+  color:#2563eb;
+  font-family:"IBM Plex Mono", monospace;
+  font-size:22px;
+  font-weight:700;
+  line-height:1.2;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.output-summary-note{
+  margin-top:5px;
+  color:#94a3b8;
+  font-size:11px;
+}
+
+@media (max-width:900px){
+  .output-summary-grid{
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width:520px){
+  .output-summary-grid{
+    grid-template-columns:1fr;
+  }
+}
 </style>
 </head>
 <body>
@@ -1797,6 +1849,7 @@ function groupByPeriod(rows, mode, fromDate, toDate, metric){
         date.getMonth(),
         date.getDate()
       );
+
       key = sortDate.getTime();
       label = formatShortDate(sortDate);
 
@@ -1804,14 +1857,22 @@ function groupByPeriod(rows, mode, fromDate, toDate, metric){
 
     const entry = map.get(key) || {
       value:0,
+      orderKg:0,
+      orderGradeB:0,
       count:0,
       sortDate,
       label
     };
 
+    const orderKg = numberValue(order.orderKg);
+    const orderGradeB = numberValue(order.orderGradeB);
+
+    entry.orderKg += orderKg;
+    entry.orderGradeB += orderGradeB;
+
     entry.value += metric === "orderGradeB"
-      ? numberValue(order.orderGradeB)
-      : numberValue(order.orderKg);
+      ? orderGradeB
+      : orderKg;
 
     entry.count += 1;
 
@@ -2139,34 +2200,98 @@ function renderOutputChart(rowsOverride){
 
     text("outputCount", "ไม่มีข้อมูล");
 
-    body.innerHTML =
-      `<div style="font-size:13px;color:var(--muted)">
+    body.innerHTML = `
+      <div style="font-size:13px;color:var(--muted)">
         ไม่มีข้อมูลในช่วงที่เลือก
-      </div>`;
+      </div>
+    `;
 
     return;
 
   }
 
-  const totalValue = points.reduce(
+  const totalFinishedOrders = points.reduce(
+    (sum, p) => sum + p.count,
+    0
+  );
+
+  const totalOrderKg = points.reduce(
+    (sum, p) => sum + p.orderKg,
+    0
+  );
+
+  const totalOrderGradeB = points.reduce(
+    (sum, p) => sum + p.orderGradeB,
+    0
+  );
+
+  const totalSelectedMetric = points.reduce(
     (sum, p) => sum + p.value,
     0
   );
 
+  const averagePerOrder = totalFinishedOrders > 0
+    ? totalSelectedMetric / totalFinishedOrders
+    : 0;
+
   text(
     "outputCount",
-    `${points.length} ${unitLabel} · รวม ${formatNumber(totalValue)} kg`
+    `${points.length} ${unitLabel} · รวม ${formatNumber(totalSelectedMetric)} kg`
   );
 
-  body.innerHTML = buildLineChartSVG(
-    points,
-    metricLabel
-  );
+  const summaryHtml = `
+    <div class="output-summary-grid">
 
-  initChartTooltip(
-    points,
-    metricLabel
-  );
+      <div class="output-summary-card">
+        <div class="output-summary-label">Finished Orders</div>
+        <div class="output-summary-value">
+          ${formatNumber(totalFinishedOrders)}
+        </div>
+        <div class="output-summary-note">
+          จำนวนงานที่เสร็จในช่วงที่เลือก
+        </div>
+      </div>
+
+      <div class="output-summary-card">
+        <div class="output-summary-label">ORDER (KG)</div>
+        <div class="output-summary-value">
+          ${formatNumber(totalOrderKg)} kg
+        </div>
+        <div class="output-summary-note">
+          น้ำหนัก Order รวม
+        </div>
+      </div>
+
+      <div class="output-summary-card">
+        <div class="output-summary-label">ORDER Grade B (KG)</div>
+        <div class="output-summary-value">
+          ${formatNumber(totalOrderGradeB)} kg
+        </div>
+        <div class="output-summary-note">
+          น้ำหนัก Grade B รวม
+        </div>
+      </div>
+
+      <div class="output-summary-card">
+        <div class="output-summary-label">
+          Average ${metricLabel}
+        </div>
+        <div class="output-summary-value">
+          ${formatNumber(averagePerOrder)} kg
+        </div>
+        <div class="output-summary-note">
+          ค่าเฉลี่ยต่อ 1 Order
+        </div>
+      </div>
+
+    </div>
+  `;
+
+  body.innerHTML =
+    summaryHtml +
+    buildLineChartSVG(points, metricLabel);
+
+  initChartTooltip(points, metricLabel);
 
 }
 function setHint(id, value){ const el = $(id); if(el) el.textContent = value || ""; }
