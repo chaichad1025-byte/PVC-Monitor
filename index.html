@@ -844,25 +844,25 @@ flex-direction:column;
     <div class="kpi-icon">⚙️</div>
     <div class="kpi-lbl">Running Orders</div>
     <div class="kpi-val" id="kpiRunning">—</div>
-    <div class="kpi-unit">orders · status กำลังดำเนินงาน</div>
+    <div class="kpi-unit">สถานะกำลังดำเนินงาน</div>
   </div>
   <div class="kpi a">
     <div class="kpi-icon">🕐</div>
     <div class="kpi-lbl">Waiting Orders</div>
     <div class="kpi-val" id="kpiWaiting">—</div>
-    <div class="kpi-unit">orders · waiting queue</div>
+    <div class="kpi-unit">รอการผลิต</div>
   </div>
   <div class="kpi b">
     <div class="kpi-icon">📦</div>
     <div class="kpi-lbl">Total Length</div>
     <div class="kpi-val" id="kpiTotalLength">—</div>
-    <div class="kpi-unit">length · all API orders</div>
+    <div class="kpi-unit">ความยาวรวมทั้งหมด</div>
   </div>
   <div class="kpi g">
     <div class="kpi-icon">✅</div>
     <div class="kpi-lbl">Actual / Planned Length</div>
     <div class="kpi-val" id="kpiLatestFinished">—</div>
-    <div class="kpi-unit">actual production / planned length</div>
+    <div class="kpi-unit">ความยาวผลิตจริง / ตามแผน</div>
   </div>
 </div>
 
@@ -1620,19 +1620,35 @@ function resolveLatestFinished(rows, currentActive){
   return storedLatest;
 }
 function renderKpis(rows, latestFinished){
+
   const running = rows.filter(isActiveProduction).length;
   const waiting = rows.filter(isWaiting).length;
-  const totalLength = rows.reduce((sum, row) => sum + numberValue(row.length), 0);
-  text("kpiRunning", running);
-  text("kpiWaiting", waiting);
-  text("kpiTotalLength", formatNumber(totalLength));
+  const totalLength = rows.reduce((sum,row)=>sum + numberValue(row.length),0);
+
+  // หน่วยของออเดอร์ล่าสุด
+  const unit = latestFinished?.unit || rows[0]?.unit || "";
+
+  text("kpiRunning", `${formatNumber(running)} ออเดอร์`);
+
+  text("kpiWaiting", `${formatNumber(waiting)} ออเดอร์`);
+
   text(
-  "kpiLatestFinished",
-  latestFinished
-    ? `${formatNumber(latestFinished.realLength)} / ${formatNumber(latestFinished.length)}`
-    : "0 / 0"
-);
-  text("queueCount", `${running} running · ${waiting} waiting · total ${formatNumber(totalLength)} length`);
+    "kpiTotalLength",
+    `${formatNumber(totalLength)} ${unit}`
+  );
+
+  text(
+    "kpiLatestFinished",
+    latestFinished
+      ? `${formatNumber(latestFinished.realLength)} / ${formatNumber(latestFinished.length)} ${unit}`
+      : `0 / 0 ${unit}`
+  );
+
+  text(
+    "queueCount",
+    `${running} running · ${waiting} waiting · total ${formatNumber(totalLength)} ${unit}`
+  );
+
 }
 function renderActive(order){
   activeOrder = order || null;
