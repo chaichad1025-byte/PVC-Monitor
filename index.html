@@ -1432,6 +1432,7 @@ function normalizeRow(row, index){
   const actualTime = pick(row, ["actualTime"]);
   const remark = pick(row, ["remark"]);
   const orderKg = pick(row, ["orderKg"]);
+  const orderGradeB = pick(row, ["orderGradeB"]);
  const powderKg = pick(row, ["powderKg"]);
  const scarpKg = pick(row, ["scarpKg"]);
  const lump = pick(row, ["lump"]);
@@ -1443,6 +1444,7 @@ function normalizeRow(row, index){
     queue: queue || index + 1,
 
     orderNo,
+    orderGradeB,
     workNo,
     worker,
     customer,
