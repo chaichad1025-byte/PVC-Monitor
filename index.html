@@ -784,6 +784,87 @@ flex-direction:column;
     grid-template-columns:1fr;
   }
 }
+.trouble-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(4,1fr);
+
+    gap:14px;
+
+    margin-top:14px;
+
+}
+
+.trouble-card{
+
+
+    border:1px solid #dbe4ee;
+
+    border-radius:12px;
+
+    padding:15px 16px;
+
+    min-height:100px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:space-between;
+
+}
+
+.trouble-title{
+
+    font-size:16px;
+
+    font-weight:600;
+
+    color:#64748b;
+
+    letter-spacing:.02em;
+
+    margin-bottom:14px;
+
+}
+
+.trouble-value{
+
+    color:#b91c1c;
+
+    font-size:15px;
+
+    font-weight:500;
+
+    line-height:1.35;
+
+    display:flex;
+
+    align-items:center;
+
+    flex:1;
+
+}
+@media(max-width:900px){
+
+.trouble-grid{
+
+grid-template-columns:repeat(2,1fr);
+
+}
+
+}
+
+@media(max-width:520px){
+
+.trouble-grid{
+
+grid-template-columns:1fr;
+
+}
+
+}
 </style>
 </head>
 <body>
@@ -929,26 +1010,26 @@ flex-direction:column;
         </div>
 
         <!-- TROUBLE TIMER -->
-        <div class="breakdown-note" id="activeTroubleBox" style="display:none">
+<div class="trouble-grid" id="activeTroubleBox">
 
-    <div>
-        <strong>สถานะ :</strong>
-        <span id="activeIssueStatus">—</span>
+    <div class="trouble-card">
+        <div class="trouble-title">สถานะ</div>
+        <div class="trouble-value" id="activeIssueStatus">—</div>
     </div>
 
-    <div>
-        <strong>หมายเหตุ :</strong>
-        <span id="activeRemark">—</span>
+    <div class="trouble-card">
+        <div class="trouble-title">หมายเหตุ</div>
+        <div class="trouble-value" id="activeRemark">—</div>
     </div>
 
-    <div>
-        เวลาเริ่มขัดข้อง :
-        <span id="activeTroubleStart">—</span>
+    <div class="trouble-card">
+        <div class="trouble-title">เวลาเริ่มขัดข้อง</div>
+        <div class="trouble-value" id="activeTroubleStart">—</div>
     </div>
 
-    <div>
-        เวลาขัดข้องรวม :
-        <span id="activeTroubleTotal">—</span>
+    <div class="trouble-card">
+        <div class="trouble-title">เวลาขัดข้องสะสม</div>
+        <div class="trouble-value" id="activeTroubleTotal">—</div>
     </div>
 
 </div>
@@ -1684,7 +1765,7 @@ function renderTroubleBox(order){
   const box = $("activeTroubleBox");
   if(!box) return;
   const show = !!order && (isIssue(order) || clean(order.troubleTime) !== "—" || clean(order.troubleStart) !== "—");
-  box.style.display = show ? "block" : "none";
+  box.style.display = show ? "grid" : "none";
   text("activeIssueStatus", order?.status);
   text("activeRemark", order?.remark);
   text("activeTroubleStart", order?.troubleStart ? formatDate(order.troubleStart) : "—");
