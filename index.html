@@ -735,7 +735,7 @@ flex-direction:column;
 /* Output Chart Summary */
 .output-summary-grid{
   display:grid;
-  grid-template-columns:repeat(4, minmax(0, 1fr));
+  grid-template-columns:repeat(5, minmax(0, 1fr));
   gap:12px;
   margin-bottom:14px;
 }
@@ -974,6 +974,7 @@ flex-direction:column;
         aria-label="เลือกข้อมูลน้ำหนัก"
         onchange="renderOutputChart()">
         <option value="orderKg">ORDER (KG)</option>
+        <option value="orderGradeA">ORDER Grade A (KG)</option>
         <option value="orderGradeB">ORDER Grade B (KG)</option>
     </select>
 </div>
@@ -1047,6 +1048,7 @@ flex-direction:column;
         <div class="frow"><span class="fk">Real Length</span><span class="fv mono" id="finishRealLength">—</span></div>
         <div class="frow"><span class="fk">Speed</span><span class="fv mono" id="finishSpeed">—</span></div>
         <div class="frow"><span class="fk">Order (KG)</span><span class="fv mono" id="finishOrderKg">—</span></div>
+        <div class="frow"><span class="fk">ORDER Grade A (KG)</span><span class="fv mono" id="finishOrderGradeA">—</span></div>
         <div class="frow"><span class="fk">ORDER Grade B (KG)</span><span class="fv mono" id="finishOrderGradeB">—</span></div>
         <div class="frow"><span class="fk">Powder (KG)</span><span class="fv mono" id="finishPowderKg">—</span></div>
         <div class="frow"><span class="fk">Scrap (KG)</span><span class="fv mono" id="finishScarpKg">—</span></div>
@@ -1166,6 +1168,7 @@ Search
 <th>REAL LENGTH</th>
 <th>SPEED</th>
 <th>ORDER (KG)</th>
+<th>ORDER Grade A (KG)</th>
 <th>ORDER Grade B (KG)</th>
 <th>POWDER (KG)</th>
 <th>SCRAP (KG)</th>
@@ -1185,7 +1188,7 @@ Search
 <tbody id="searchResultBody">
 
 <tr>
-<td colspan="25">
+<td colspan="27">
 No results
 </td>
 </tr>
@@ -1432,6 +1435,7 @@ function normalizeRow(row, index){
   const actualTime = pick(row, ["actualTime"]);
   const remark = pick(row, ["remark"]);
   const orderKg = pick(row, ["orderKg"]);
+  const orderGradeA = pick(row, ["orderGradeA"]);
   const orderGradeB = pick(row, ["orderGradeB"]);
  const powderKg = pick(row, ["powderKg"]);
  const scarpKg = pick(row, ["scarpKg"]);
@@ -1444,6 +1448,7 @@ function normalizeRow(row, index){
     queue: queue || index + 1,
 
     orderNo,
+    orderGradeA,
     orderGradeB,
     workNo,
     worker,
@@ -1726,6 +1731,11 @@ function renderLatestFinished(order){
   text("finishOrderKg", order?.orderKg);
 
   text(
+  "finishOrderGradeA",
+  formatNumber(numberValue(order?.orderGradeA))
+);
+
+  text(
     "finishOrderGradeB",
     formatNumber(numberValue(order?.orderGradeB))
   );
@@ -1876,6 +1886,7 @@ function groupByPeriod(rows, mode, fromDate, toDate, metric){
     const entry = map.get(key) || {
       value:0,
       orderKg:0,
+      orderGradeA:0,
       orderGradeB:0,
       count:0,
       sortDate,
@@ -1883,14 +1894,18 @@ function groupByPeriod(rows, mode, fromDate, toDate, metric){
     };
 
     const orderKg = numberValue(order.orderKg);
+    const orderGradeA = numberValue(order.orderGradeA);
     const orderGradeB = numberValue(order.orderGradeB);
 
     entry.orderKg += orderKg;
+    entry.orderGradeA += orderGradeA;
     entry.orderGradeB += orderGradeB;
 
-    entry.value += metric === "orderGradeB"
-      ? orderGradeB
-      : orderKg;
+    entry.value += metric === "orderGradeA"
+  ? orderGradeA
+  : metric === "orderGradeB"
+    ? orderGradeB
+    : orderKg;
 
     entry.count += 1;
 
@@ -2175,11 +2190,16 @@ function renderOutputChart(rowsOverride){
 
   const rows = rowsOverride || finishRows;
 
-  const metric = $("outputMetric")?.value === "orderGradeB"
-    ? "orderGradeB"
-    : "orderKg";
+const selectedMetric = $("outputMetric")?.value;
 
-  const metricLabel = metric === "orderGradeB"
+const metric = selectedMetric === "orderGradeA" ||
+  selectedMetric === "orderGradeB"
+  ? selectedMetric
+  : "orderKg";
+
+const metricLabel = metric === "orderGradeA"
+  ? "ORDER Grade A (KG)"
+  : metric === "orderGradeB"
     ? "ORDER Grade B (KG)"
     : "ORDER (KG)";
 
@@ -2237,7 +2257,10 @@ function renderOutputChart(rowsOverride){
     (sum, p) => sum + p.orderKg,
     0
   );
-
+  const totalOrderGradeA = points.reduce(
+  (sum, p) => sum + p.orderGradeA,
+  0
+);
   const totalOrderGradeB = points.reduce(
     (sum, p) => sum + p.orderGradeB,
     0
@@ -2279,6 +2302,17 @@ function renderOutputChart(rowsOverride){
           น้ำหนัก Order รวม
         </div>
       </div>
+      <div class="output-summary-card">
+  <div class="output-summary-label">ORDER Grade A (KG)</div>
+
+  <div class="output-summary-value">
+    ${formatNumber(totalOrderGradeA)} kg
+  </div>
+
+  <div class="output-summary-note">
+    น้ำหนัก Grade A รวม
+  </div>
+</div>
 
       <div class="output-summary-card">
         <div class="output-summary-label">ORDER Grade B (KG)</div>
@@ -2436,7 +2470,7 @@ function searchFinishedOrder(){
 
   if(!keyword){
     body.innerHTML =
-      `<tr><td colspan="26">Enter Number</td></tr>`;
+      `<tr><td colspan="27">Enter Number</td></tr>`;
     return;
   }
 
@@ -2452,6 +2486,7 @@ function searchFinishedOrder(){
 
   let totalLength = 0;
   let totalOrder = 0;
+  let totalOrderGradeA = 0;
   let totalOrderGradeB = 0;
   let totalPowder = 0;
   let totalScarp = 0;
@@ -2461,6 +2496,7 @@ function searchFinishedOrder(){
 
     totalLength += Number(row.length) || 0;
     totalOrder += Number(row.orderKg) || 0;
+    totalOrderGradeA += Number(row.orderGradeA) || 0;
     totalOrderGradeB += Number(row.orderGradeB) || 0;
     totalPowder += Number(row.powderKg) || 0;
     totalScarp += Number(row.scarpKg) || 0;
@@ -2470,7 +2506,7 @@ function searchFinishedOrder(){
 
   if(result.length === 0){
     body.innerHTML =
-      `<tr><td colspan="26">No results</td></tr>`;
+      `<tr><td colspan="27">No results</td></tr>`;
     return;
   }
 
@@ -2497,6 +2533,7 @@ ${row.realLength
 
 <td>${clean(row.speed)}</td>
 <td>${clean(row.orderKg)}</td>
+<td>${formatNumber(numberValue(row.orderGradeA))}</td>
 <td>${formatNumber(numberValue(row.orderGradeB))}</td>
 <td>${clean(row.powderKg)}</td>
 <td>${clean(row.scarpKg)}</td>
@@ -2532,6 +2569,7 @@ ${row.realLength
 <td></td>
 <td></td>
 <td>${totalOrder.toLocaleString()}</td>
+<td>${totalOrderGradeA.toLocaleString()}</td>
 <td>${totalOrderGradeB.toLocaleString()}</td>
 <td>${totalPowder.toLocaleString()}</td>
 <td>${totalScarp.toLocaleString()}</td>
@@ -2560,7 +2598,7 @@ function searchFinishedByDate(){
 
     body.innerHTML = `
       <tr>
-        <td colspan="26">Please select date range</td>
+        <td colspan="27">Please select date range</td>
       </tr>`;
 
     return;
@@ -2575,7 +2613,7 @@ function searchFinishedByDate(){
 
     if(!row.startDate) return false;
 
-    const d = new Date(row.startDate);
+    const d = parseDate(row.startDate);
 
     if(isNaN(d.getTime())) return false;
 
@@ -2587,7 +2625,7 @@ function searchFinishedByDate(){
 
     body.innerHTML = `
       <tr>
-        <td colspan="26">No Results</td>
+        <td colspan="27">No Results</td>
       </tr>`;
 
     return;
@@ -2605,6 +2643,7 @@ function searchFinishedByDate(){
   let totalLength = 0;
   let totalRealLength = 0;
   let totalOrder = 0;
+  let totalOrderGradeA = 0;
   let totalOrderGradeB = 0;
   let totalPowder = 0;
   let totalScarp = 0;
@@ -2615,6 +2654,7 @@ function searchFinishedByDate(){
     totalLength += Number(row.length) || 0;
     totalRealLength += Number(row.realLength) || 0;
     totalOrder += Number(row.orderKg) || 0;
+    totalOrderGradeA += Number(row.orderGradeA) || 0;
     totalOrderGradeB += Number(row.orderGradeB) || 0;
     totalPowder += Number(row.powderKg) || 0;
     totalScarp += Number(row.scarpKg) || 0;
@@ -2646,6 +2686,7 @@ ${row.realLength
 
 <td>${clean(row.speed)}</td>
 <td>${clean(row.orderKg)}</td>
+<td>${formatNumber(numberValue(row.orderGradeA))}</td>
 <td>${formatNumber(numberValue(row.orderGradeB))}</td>
 <td>${clean(row.powderKg)}</td>
 <td>${clean(row.scarpKg)}</td>
@@ -2683,6 +2724,7 @@ ${row.realLength
 <td>${totalRealLength.toLocaleString()}</td>
 <td></td>
 <td>${totalOrder.toLocaleString()}</td>
+<td>${totalOrderGradeA.toLocaleString()}</td>
 <td>${totalOrderGradeB.toLocaleString()}</td>
 <td>${totalPowder.toLocaleString()}</td>
 <td>${totalScarp.toLocaleString()}</td>
